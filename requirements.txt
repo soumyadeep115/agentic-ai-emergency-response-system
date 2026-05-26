@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+langgraph
+networkx
+mysql-connector-python
+python-dotenv
+pydantic
