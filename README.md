@@ -12,6 +12,10 @@ RoadSoS is an AI-powered emergency response coordination system that dynamically
 - MySQL for live operational state
 - FastAPI for API exposure
 
+It is an AI-powered multi-agent emergency response orchestration platform that autonomously analyzes incidents, allocates emergency resources, computes optimal dispatch routes, coordinates police response, evaluates hospital capacity, and provides real-time operational analytics through an interactive tactical dashboard.
+
+The system combines LangGraph agent orchestration, FastAPI APIs, SQLAlchemy persistence, MySQL analytics, NetworkX route optimization, and a React-based command dashboard to simulate real-world intelligent emergency response operations.
+
 It simulates real-world emergency response decision-making through adaptive multi-agent coordination.
 
 ===========================================================
@@ -109,8 +113,15 @@ Stored metadata includes:
 TECH STACK
 ===========================================================
 
+Frontend
+- React
+- Vite
+- TailwindCSS
+
 Backend:
-Python
+- Python
+- MySQL Connector
+- Pydantic
 
 Agent Orchestration:
 LangGraph
@@ -126,6 +137,11 @@ SQLAlchemy
 
 API Layer:
 FastAPI
+
+Architecture
+- Multi-Agent Workflow Orchestration
+- REST API Microservice Layer
+- Real-Time Dashboard Polling
 
 Configuration:
 python-dotenv
@@ -235,6 +251,40 @@ Responsibilities:
 - Generate final dispatch recommendation
 
 ===========================================================
+System Workflow
+===========================================================
+
+Incident Input  
+→ FastAPI API Layer  
+→ LangGraph Multi-Agent Execution  
+→ Route Optimization (NetworkX)  
+→ Dispatch Decision  
+→ SQLAlchemy Logging  
+→ MySQL Persistence  
+→ Analytics Computation  
+→ React Dashboard Live Update
+
+===========================================================
+Dynamic Analytics Validation
+===========================================================
+
+The dashboard metrics update automatically based on real dispatch logs.
+
+Example:
+- Incident_B dominant → Dashboard shows Incident_B hotspot
+- Incident dominant → Dashboard automatically switches hotspot ranking
+
+This validates live backend-driven adaptive analytics.
+
+Observed Validation:
+
+Incident_B dominant (4 logs)
+→ Dashboard hotspot: Incident_B
+
+Incident dominant (5 logs)
+→ Dashboard hotspot automatically switched to Incident
+
+===========================================================
 DATABASE SCHEMA
 ===========================================================
 
@@ -304,6 +354,9 @@ API ENDPOINTS
 
 POST /dispatch
 GET /dispatch-history
+GET /api/v1/analytics/hotspots
+GET /api/v1/analytics/map-state
+GET /api/v1/reports/incidents
 
 Returns complete historical dispatch audit logs including:
 
@@ -372,6 +425,16 @@ uvicorn api:app --reload
 
 http://127.0.0.1:8000/docs
 
+-----------------------------------------------------------
+
+6. Run Frontend
+
+cd frontend
+npm install
+npm run dev
+
+-----------------------------------------------------------
+
 ===========================================================
 DEMO SCENARIOS
 ===========================================================
@@ -409,11 +472,25 @@ FUTURE ENHANCEMENTS
 ===========================================================
 
 - Computer vision-based severity estimation
-- Live map visualization
+- Google Maps API route visualization
 - Authority dashboard
 - WebSocket event streaming
 - Regional emergency federation
 - CCTV-based automated incident detection
+
+===========================================================
+INTEGRATION CHALLENGES SOLVED
+===========================================================
+
+During development, the following system integration challenges were resolved:
+
+- Frontend-backend CORS synchronization
+- API schema mismatch in polling layer
+- SQLAlchemy persistence integration
+- Dynamic analytics endpoint validation
+- Real-time dashboard state synchronization
+
+These fixes enabled complete end-to-end autonomous dispatch execution.
 
 ===========================================================
 KEY ACHIEVEMENT
@@ -429,6 +506,4 @@ RoadSoS demonstrates:
 - RESTful emergency dispatch APIs
 - Production-grade backend persistence via SQLAlchemy ORM
 
-It is a production-inspired intelligent emergency response platform.
-
-It is a production-inspired emergency response intelligence prototype.
+It is a fully integrated full-stack autonomous emergency response orchestration prototype demonstrating live adaptive decision intelligence.

@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #0d1117;
+    color: #e6edf3;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: #161b22; }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+}
+
+@layer components {
+  /* ── Layout panels ── */
+  .panel {
+    @apply bg-panel border border-border rounded-[3px];
+  }
+  .card {
+    @apply bg-card border border-border rounded-[3px];
+  }
+  .panel-header {
+    @apply px-3 py-2 border-b border-border flex items-center gap-2 flex-shrink-0;
+  }
+
+  /* ── Typography helpers ── */
+  .label-xs {
+    @apply text-[9px] uppercase tracking-[0.15em] text-muted font-semibold;
+  }
+  .label-sm {
+    @apply text-[10px] uppercase tracking-[0.12em] text-secondary font-medium;
+  }
+  .mono {
+    @apply font-mono text-primary tabular-nums;
+  }
+  .terminal-line {
+    @apply font-mono text-[11px] text-secondary leading-relaxed;
+  }
+
+  /* ── Severity badges ── */
+  .badge {
+    @apply inline-flex items-center text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-[2px] uppercase tracking-wider leading-none;
+  }
+  .badge-critical {
+    @apply badge bg-red-500/10 text-accent-red border border-red-500/25;
+  }
+  .badge-high {
+    @apply badge bg-orange-500/10 text-accent-orange border border-orange-500/25;
+  }
+  .badge-medium {
+    @apply badge bg-yellow-500/10 text-yellow-400 border border-yellow-500/25;
+  }
+  .badge-low {
+    @apply badge bg-blue-500/10 text-accent-blue border border-blue-500/25;
+  }
+  .badge-ok {
+    @apply badge bg-green-500/10 text-accent-green border border-green-500/25;
+  }
+  .badge-breach {
+    @apply badge bg-red-500/10 text-accent-red border border-red-500/25;
+  }
+
+  /* ── Buttons ── */
+  .btn-ghost {
+    @apply px-3 py-1.5 text-xs font-medium text-secondary hover:text-primary
+           border border-border hover:border-muted rounded-[3px] transition-all duration-150;
+  }
+  .btn-danger {
+    @apply px-4 py-2 font-mono text-xs font-bold tracking-widest uppercase
+           text-accent-red border border-accent-red/40 bg-accent-red/5
+           hover:bg-accent-red/15 hover:border-accent-red/70
+           rounded-[3px] transition-all duration-150 active:scale-95;
+  }
+  .btn-primary {
+    @apply px-4 py-2 font-mono text-xs font-bold tracking-widest uppercase
+           text-white bg-accent-amber hover:bg-orange-500
+           rounded-[3px] transition-all duration-150 active:scale-95;
+  }
+
+  /* ── Nav items ── */
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-2.5 text-sm font-medium
+           transition-all duration-150 cursor-pointer select-none
+           border-l-2;
+  }
+  .nav-active {
+    @apply nav-item border-accent-amber bg-card text-primary;
+  }
+  .nav-inactive {
+    @apply nav-item border-transparent text-secondary
+           hover:border-border hover:bg-card/50 hover:text-primary;
+  }
+
+  /* ── Telemetry value rows ── */
+  .telem-row {
+    @apply flex items-center justify-between px-3 py-1.5 border-b border-border/50 last:border-0;
+  }
+
+  /* ── Data table ── */
+  .data-table { @apply w-full border-collapse; }
+  .data-table th {
+    @apply px-3 py-2 text-left text-[9px] uppercase tracking-[0.15em] text-muted
+           font-semibold border-b border-border bg-base/60 sticky top-0;
+  }
+  .data-table td {
+    @apply px-3 py-2.5 text-[11px] font-mono text-secondary border-b border-border/50;
+  }
+  .data-table tr:hover td {
+    @apply bg-card/60 text-primary;
+  }
+}
+
+@layer utilities {
+  /* Scanline overlay for panels */
+  .scanlines {
+    background-image: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px
+    );
+  }
+
+  /* Status dot animations */
+  .dot-red { @apply inline-block w-1.5 h-1.5 rounded-full bg-accent-red; }
+  .dot-green { @apply inline-block w-1.5 h-1.5 rounded-full bg-accent-green; }
+  .dot-amber { @apply inline-block w-1.5 h-1.5 rounded-full bg-accent-amber; }
+  .dot-blue { @apply inline-block w-1.5 h-1.5 rounded-full bg-accent-blue; }
+  .dot-muted { @apply inline-block w-1.5 h-1.5 rounded-full bg-muted; }
+
+  /* Glow effects */
+  .glow-red   { box-shadow: 0 0 16px rgba(248,81,73,0.25); }
+  .glow-green { box-shadow: 0 0 16px rgba(63,185,80,0.25); }
+  .glow-amber { box-shadow: 0 0 16px rgba(249,115,22,0.25); }
+}
