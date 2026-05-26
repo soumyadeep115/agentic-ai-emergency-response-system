@@ -87,6 +87,24 @@ Adaptive branching based on:
 - Incident severity
 - Hospital overload state
 
+-----------------------------------------------------------
+
+7. Dispatch History Logging
+
+Every emergency dispatch is persisted to MySQL using SQLAlchemy.
+
+Stored metadata includes:
+
+- Incident details
+- Selected responders
+- Route decision
+- Police allocation
+- Escalation state
+- Final dispatch recommendation
+- Timestamp
+
+-----------------------------------------------------------
+
 ===========================================================
 TECH STACK
 ===========================================================
@@ -102,6 +120,9 @@ NetworkX
 
 Database:
 MySQL
+
+ORM:
+SQLAlchemy
 
 API Layer:
 FastAPI
@@ -259,11 +280,38 @@ Columns:
 - clearance_capacity
 - status
 
+-----------------------------------------------------------
+
+5. dispatch_logs
+
+Columns:
+
+- id
+- incident_type
+- casualties
+- incident_location
+- selected_ambulance
+- selected_hospital
+- selected_route
+- police_status
+- escalation_status
+- dispatch_decision
+- created_at
+
 ===========================================================
 API ENDPOINTS
 ===========================================================
 
 POST /dispatch
+GET /dispatch-history
+
+Returns complete historical dispatch audit logs including:
+
+- Incident metadata
+- Selected responders
+- Routing decisions
+- Escalation events
+- Dispatch timestamps
 
 Input:
 
@@ -285,51 +333,13 @@ Returns:
 
 -----------------------------------------------------------
 
-Future Endpoints:
-
-GET /ambulances
-GET /hospitals
-GET /traffic
-
-PUT /ambulance/{id}
-PUT /hospital/{id}
-PUT /traffic
-
-===========================================================
-PROJECT STRUCTURE
-===========================================================
-
-road_sos/
-│
-├── agents/
-│   ├── incident_agent.py
-│   ├── ambulance_agent.py
-│   ├── hospital_agent.py
-│   ├── route_agent.py
-│   ├── police_agent.py
-│   └── escalation_agent.py
-│
-├── graph/
-│   └── state.py
-│
-├── utils/
-│   ├── db.py
-│   └── road_graph.py
-│
-├── api.py
-├── main.py
-├── .env
-├── .env.example
-├── .gitignore
-└── README.md
-
 ===========================================================
 SETUP INSTRUCTIONS
 ===========================================================
 
 1. Install dependencies
 
-pip install fastapi uvicorn mysql-connector-python networkx langgraph python-dotenv
+pip install fastapi uvicorn mysql-connector-python networkx langgraph python-dotenv sqlalchemy
 
 -----------------------------------------------------------
 
@@ -412,9 +422,13 @@ KEY ACHIEVEMENT
 RoadSoS demonstrates:
 
 - Multi-agent adaptive orchestration
-- Graph-theoretic route optimization
-- Real-time operational state adaptation
-- Fault-tolerant emergency escalation
-- Full backend API integration
+- Dijkstra-based shortest path routing
+- Dynamic operational state updates from MySQL
+- Persistent dispatch history tracking
+- Fault-tolerant escalation workflows
+- RESTful emergency dispatch APIs
+- Production-grade backend persistence via SQLAlchemy ORM
+
+It is a production-inspired intelligent emergency response platform.
 
 It is a production-inspired emergency response intelligence prototype.
