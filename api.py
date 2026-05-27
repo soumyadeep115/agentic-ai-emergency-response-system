@@ -4,6 +4,7 @@ from main import run_dispatch
 from utils.db import SessionLocal
 from models.dispatch_log import DispatchLog
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 app = FastAPI()
 
@@ -131,3 +132,36 @@ def get_incident_reports():
     logs = db.query(DispatchLog).all()
     db.close()
     return logs
+
+from sqlalchemy import text
+
+
+@app.get("/api/v1/resources")
+def get_resources():
+
+    db = SessionLocal()
+
+    ambulances = db.execute(
+        text("SELECT * FROM ambulances")
+    ).fetchall()
+
+    police = db.execute(
+        text("SELECT * FROM police_units")
+    ).fetchall()
+
+    repair_shops = db.execute(
+        text("SELECT * FROM repair_shops")
+    ).fetchall()
+
+    tow_services = db.execute(
+        text("SELECT * FROM tow_services")
+    ).fetchall()
+
+    db.close()
+
+    return {
+        "ambulances": [dict(row._mapping) for row in ambulances],
+        "police": [dict(row._mapping) for row in police],
+        "repair_shops": [dict(row._mapping) for row in repair_shops],
+        "tow_services": [dict(row._mapping) for row in tow_services]
+    }
