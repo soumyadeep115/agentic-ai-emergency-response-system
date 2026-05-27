@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // ── Resource type config ─────────────────────────────────────────────────────
 const RESOURCE_TYPES = [
@@ -55,12 +55,8 @@ function loadResources() {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch { }
   return { hospitals: [], police: [], ambulances: [], repair_shops: [], tow_services: [] };
-}
-
-function saveResources(data) {
-  localStorage.setItem(LS_KEY, JSON.stringify(data, null, 2));
 }
 
 // ── Inline input component ────────────────────────────────────────────────────
@@ -120,20 +116,64 @@ function ResourceForm({ type, resources, onSave }) {
       return;
     }
 
-    const entry = { id: form.id.trim(), name: form.name.trim(), latitude: lat, longitude: lng, status: form.status };
+    const buildEntry = () => {
+      if (type.key === "hospitals") {
+        return {
+          hospital_id: form.id.trim(),
+          available_beds: Number(form.latitude),
+          icu_readiness: Number(form.longitude),
+          trauma_score: Number(form.name)
+        };
+      }
+
+      if (type.key === "police") {
+        return {
+          unit_id: form.id.trim(),
+          eta: Number(form.latitude),
+          clearance_capacity: Number(form.longitude),
+          status: form.status
+        };
+      }
+
+      if (type.key === "ambulances") {
+        return {
+          ambulance_id: form.id.trim(),
+          eta: Number(form.latitude),
+          equipment_score: Number(form.longitude),
+          status: form.status,
+          location: form.name.trim()
+        };
+      }
+
+      return {
+        id: form.id.trim(),
+        name: form.name.trim(),
+        latitude: lat,
+        longitude: lng,
+        status: form.status
+      };
+    };
+
+    const entry = buildEntry();
 
     const updated = [...resources];
     if (editIdx !== null) {
       updated[editIdx] = entry;
-      flash(`Updated: ${entry.name}`);
+      flash(`Updated successfully`);
       setEditIdx(null);
     } else {
-      if (updated.find(r => r.id === entry.id)) {
+      if (updated.find(
+        r =>
+          r.id === entry.id ||
+          r.hospital_id === entry.hospital_id ||
+          r.unit_id === entry.unit_id ||
+          r.ambulance_id === entry.ambulance_id
+      )) {
         flash(`ID "${entry.id}" already exists`, false);
         return;
       }
       updated.push(entry);
-      flash(`Added: ${entry.name}`);
+      flash(`Added successfully`);
     }
     onSave(updated);
     setForm({ ...EMPTY_ENTRY });
@@ -141,7 +181,41 @@ function ResourceForm({ type, resources, onSave }) {
 
   const handleEdit = (idx) => {
     const r = resources[idx];
-    setForm({ id: r.id, name: r.name, latitude: String(r.latitude), longitude: String(r.longitude), status: r.status });
+
+    if (type.key === "hospitals") {
+      setForm({
+        id: r.hospital_id,
+        name: String(r.trauma_score),
+        latitude: String(r.available_beds),
+        longitude: String(r.icu_readiness),
+        status: "available"
+      });
+    } else if (type.key === "police") {
+      setForm({
+        id: r.unit_id,
+        name: "",
+        latitude: String(r.eta),
+        longitude: String(r.clearance_capacity),
+        status: r.status
+      });
+    } else if (type.key === "ambulances") {
+      setForm({
+        id: r.ambulance_id,
+        name: r.location,
+        latitude: String(r.eta),
+        longitude: String(r.equipment_score),
+        status: r.status
+      });
+    } else {
+      setForm({
+        id: r.id,
+        name: r.name,
+        latitude: String(r.latitude),
+        longitude: String(r.longitude),
+        status: r.status
+      });
+    }
+
     setEditIdx(idx);
   };
 
@@ -346,76 +420,104 @@ function ResourceForm({ type, resources, onSave }) {
               Saved Records
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '180px', overflowY: 'auto' }}>
-              {resources.map((r, idx) => (
-                <div
-                  key={r.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '6px 8px',
-                    background: editIdx === idx ? `${t.accent}0.08)` : '#0d1117',
-                    border: `1px solid ${editIdx === idx ? t.color + '40' : '#21262d'}`,
-                    borderRadius: '3px',
-                    transition: 'background 0.15s',
-                  }}
-                >
-                  {/* Status dot */}
-                  <span
+              {resources.map((r, idx) => {
+                const displayName =
+                  r.name || r.location || r.hospital_id || r.unit_id || r.ambulance_id;
+
+                const displayId =
+                  r.id || r.hospital_id || r.unit_id || r.ambulance_id;
+
+                const displayMeta =
+                  r.latitude || r.available_beds || r.eta;
+
+                return (
+                  <div
+                    key={displayId}
                     style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      flexShrink: 0,
-                      background: r.status === 'available' ? '#3fb950' : r.status === 'busy' ? '#f97316' : '#484f58',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 8px',
+                      background: editIdx === idx ? `${t.accent}0.08)` : '#0d1117',
+                      border: `1px solid ${editIdx === idx ? t.color + '40' : '#21262d'}`,
+                      borderRadius: '3px',
+                      transition: 'background 0.15s',
                     }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '11px', color: '#e6edf3', fontWeight: 600, fontFamily: 'monospace' }}>
-                      {r.name}
+                  >
+                    <span
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        flexShrink: 0,
+                        background:
+                          r.status === 'available'
+                            ? '#3fb950'
+                            : r.status === 'busy'
+                              ? '#f97316'
+                              : '#484f58',
+                      }}
+                    />
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          color: '#e6edf3',
+                          fontWeight: 600,
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        {displayName}
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: '9px',
+                          color: '#484f58',
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        {displayId} · {displayMeta} · {r.status}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '9px', color: '#484f58', fontFamily: 'monospace' }}>
-                      {r.id} · {r.latitude}, {r.longitude} · {r.status}
+
+                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                      <button
+                        onClick={() => handleEdit(idx)}
+                        style={{
+                          fontSize: '9px',
+                          padding: '3px 7px',
+                          borderRadius: '2px',
+                          border: '1px solid #30363d',
+                          background: 'transparent',
+                          color: '#8b949e',
+                          cursor: 'pointer',
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(idx)}
+                        style={{
+                          fontSize: '9px',
+                          padding: '3px 7px',
+                          borderRadius: '2px',
+                          border: '1px solid #30363d',
+                          background: 'transparent',
+                          color: '#ef4444',
+                          cursor: 'pointer',
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        ✕
+                      </button>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                    <button
-                      id={`${t.key}-edit-${idx}`}
-                      onClick={() => handleEdit(idx)}
-                      title="Edit"
-                      style={{
-                        fontSize: '9px',
-                        padding: '3px 7px',
-                        borderRadius: '2px',
-                        border: '1px solid #30363d',
-                        background: 'transparent',
-                        color: '#8b949e',
-                        cursor: 'pointer',
-                        fontFamily: 'monospace',
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      id={`${t.key}-del-${idx}`}
-                      onClick={() => handleDelete(idx)}
-                      title="Delete"
-                      style={{
-                        fontSize: '9px',
-                        padding: '3px 7px',
-                        borderRadius: '2px',
-                        border: '1px solid #30363d',
-                        background: 'transparent',
-                        color: '#ef4444',
-                        cursor: 'pointer',
-                        fontFamily: 'monospace',
-                      }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -442,7 +544,7 @@ function ExportPanel({ resources }) {
     <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '4px', overflow: 'hidden' }}>
       <div style={{ padding: '10px 14px', borderBottom: '1px solid #21262d', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#484f58" strokeWidth="2">
-          <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
         </svg>
         <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8b949e', fontWeight: 600 }}>
           resources.json Preview
@@ -495,12 +597,42 @@ export default function ResourceAdmin() {
 
   // Persist to localStorage whenever resources change
   useEffect(() => {
-    saveResources(resources);
-  }, [resources]);
+    const fetchResources = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/v1/resources");
+        const data = await res.json();
+        setResources(data);
+        localStorage.setItem("roadsos_resources", JSON.stringify(data));
+      } catch (error) {
+        console.error("Failed to load resources:", error);
+      }
+    };
 
-  const handleSave = useCallback((key, updated) => {
-    setResources(prev => ({ ...prev, [key]: updated }));
+    fetchResources();
   }, []);
+
+  const handleSave = (key, updated) => {
+    const newResources = {
+      ...resources,
+      [key]: updated
+    };
+
+    console.log("Saving:", newResources);
+
+    setResources(newResources);
+    localStorage.setItem("roadsos_resources", JSON.stringify(newResources));
+
+    fetch("http://127.0.0.1:8000/api/v1/save-resources", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(newResources)
+    })
+      .then(res => res.json())
+      .then(data => console.log("Backend response:", data))
+      .catch(err => console.error("Save failed:", err));
+  };
 
   const activeType = RESOURCE_TYPES.find(t => t.key === activeTab);
   const totalRecords = Object.values(resources).reduce((s, a) => s + a.length, 0);

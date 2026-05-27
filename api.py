@@ -5,12 +5,18 @@ from utils.db import SessionLocal
 from models.dispatch_log import DispatchLog
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from fastapi import Body
+import json
+from utils.import_resources import import_resources
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,7 +40,13 @@ def dispatch_incident(request: IncidentRequest):
         "dispatch_decision": ""
     }
 
-    result = run_dispatch(initial_state)
+    try:
+        result = run_dispatch(initial_state)
+    except Exception as e:
+        return {
+            "status": "Dispatch failed safely",
+            "error": str(e)
+        }
 
     db = SessionLocal()
 
@@ -133,35 +145,73 @@ def get_incident_reports():
     db.close()
     return logs
 
-from sqlalchemy import text
-
 
 @app.get("/api/v1/resources")
 def get_resources():
 
     db = SessionLocal()
 
-    ambulances = db.execute(
-        text("SELECT * FROM ambulances")
-    ).fetchall()
-
-    police = db.execute(
-        text("SELECT * FROM police_units")
-    ).fetchall()
-
-    repair_shops = db.execute(
-        text("SELECT * FROM repair_shops")
-    ).fetchall()
-
-    tow_services = db.execute(
-        text("SELECT * FROM tow_services")
-    ).fetchall()
+    hospitals = db.execute(text("SELECT * FROM hospitals")).fetchall()
+    police = db.execute(text("SELECT * FROM police_units")).fetchall()
+    ambulances = db.execute(text("SELECT * FROM ambulances")).fetchall()
+    repair_shops = db.execute(text("SELECT * FROM repair_shops")).fetchall()
+    tow_services = db.execute(text("SELECT * FROM tow_services")).fetchall()
 
     db.close()
 
     return {
-        "ambulances": [dict(row._mapping) for row in ambulances],
-        "police": [dict(row._mapping) for row in police],
-        "repair_shops": [dict(row._mapping) for row in repair_shops],
-        "tow_services": [dict(row._mapping) for row in tow_services]
+        "hospitals": [
+            {
+                "id": row.hospital_id,
+                "name": row.hospital_id,
+                "latitude": row.available_beds,
+                "longitude": row.icu_readiness,
+                "status": "available"
+            }
+            for row in hospitals
+        ],
+
+        "police": [
+            {
+                "id": row.unit_id,
+                "name": row.unit_id,
+                "latitude": row.eta,
+                "longitude": row.clearance_capacity,
+                "status": row.status
+            }
+            for row in police
+        ],
+
+        "ambulances": [
+            {
+                "id": row.ambulance_id,
+                "name": row.location,
+                "latitude": row.eta,
+                "longitude": row.equipment_score,
+                "status": row.status
+            }
+            for row in ambulances
+        ],
+
+        "repair_shops": [
+            dict(row._mapping)
+            for row in repair_shops
+        ],
+
+        "tow_services": [
+            dict(row._mapping)
+            for row in tow_services
+        ]
     }
+
+@app.post("/api/v1/save-resources")
+def save_resources(data: dict = Body(...)):
+
+    with open("frontend/src/data/resources.json", "w") as file:
+        json.dump(data, file, indent=2)
+
+
+
+    import_resources()
+
+    return {"message": "Resources saved and synced to database"}

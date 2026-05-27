@@ -25,6 +25,14 @@ def coordinate_police(state: EmergencyState):
             (unit_id, score, eta, clearance)
         )
 
+    if not scored_units:
+        state["police_required"] = False
+        state["police_status"] = "No police units available"
+
+        cursor.close()
+        conn.close()
+        return state
+
     scored_units.sort(key=lambda x: x[1], reverse=True)
 
     best_unit = scored_units[0]
