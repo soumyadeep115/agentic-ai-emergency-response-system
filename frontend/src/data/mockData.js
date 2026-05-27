@@ -15,3 +15,10 @@
  * Geographic coordinate mapping for NetworkX node IDs lives in:
  *   src/services/api.js → NODE_COORDS
  */
+
+/**
+ * emergencyLogs — mutable in-memory store for manually entered emergency coordinates.
+ * Populated at runtime by the Sidebar "Emergency" form.
+ * Shape: Array<{ longitude: number, latitude: number, timestamp: string }>
+ */
+export const emergencyLogs = [];
