@@ -52,10 +52,16 @@ function EmptyIncidentTable() {
 
 export default function PerformanceReports() {
   const fetchFn = useCallback(() => getIncidents(), []);
-  // Initial state: empty array — no mock data
-  const { data: incidents, source, error, loading } = usePolling(fetchFn, [], 20_000);
+  // getIncidents() returns { data: [...], source, error } — usePolling stores the whole object.
+  // Destructure carefully: if data is already an array (initial fallback []), use it directly;
+  // otherwise pull .data out of the returned object.
+  const { data: rawResult, source: rawSource, error: rawError, loading } = usePolling(fetchFn, { data: [], source: 'cached', error: null }, 20_000);
 
-  const rows = incidents ?? [];
+  // rawResult may be the object { data, source, error } from getIncidents(), or the
+  // fallback { data: [], source: 'cached', error: null } — normalise both cases.
+  const rows   = Array.isArray(rawResult) ? rawResult : (Array.isArray(rawResult?.data) ? rawResult.data : []);
+  const source = rawResult?.source ?? rawSource ?? 'cached';
+  const error  = rawResult?.error  ?? rawError  ?? null;
 
   // Compute live summary stats from real data only
   const resolved  = rows.length;
