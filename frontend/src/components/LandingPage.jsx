@@ -335,7 +335,7 @@ export default function LandingPage() {
             accent="#58a6ff"
             accentRgb="88,166,255"
             title="User Portal"
-            description="Civilian interface for incident reporting, status tracking, and emergency notifications. Coming soon."
+            description="Live resource map showing all active ambulances, police stations, repair shops and tow services. Fetches from the live backend."
             label="Enter User View"
             icon={
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">

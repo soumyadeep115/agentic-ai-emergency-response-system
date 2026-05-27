@@ -5,9 +5,11 @@ import Sidebar from './components/Sidebar.jsx';
 import AccidentDashboard from './views/AccidentDashboard.jsx';
 import LiveTacticalMap from './views/LiveTacticalMap.jsx';
 import PerformanceReports from './views/PerformanceReports.jsx';
+import ResourceAdmin from './views/ResourceAdmin.jsx';
 
-// ── New landing page ────────────────────────────────────────────────────────
+// ── New landing page + user portal ──────────────────────────────────────────
 import LandingPage from './components/LandingPage.jsx';
+import UserPortalView from './views/UserPortal.jsx';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Lightweight hash-based router
@@ -18,20 +20,22 @@ function getPath() {
   return hash;
 }
 
-// ── Dashboard sub-views (unchanged from original App.jsx) ──────────────────
+// ── Dashboard sub-views ──────────────────────────────────────────────────
 const VIEWS = {
-  dashboard: AccidentDashboard,
-  map:       LiveTacticalMap,
-  reports:   PerformanceReports,
+  dashboard:        AccidentDashboard,
+  map:              LiveTacticalMap,
+  reports:          PerformanceReports,
+  'resource-admin': ResourceAdmin,
 };
 
 const VIEW_LABELS = {
-  dashboard: { title: 'ACCIDENT DASHBOARD', crumb: 'Analytics & Hotspots' },
-  map:       { title: 'LIVE TACTICAL MAP',   crumb: 'Operational Core'     },
-  reports:   { title: 'PERFORMANCE REPORTS', crumb: 'SLA Metrics & Logs'   },
+  dashboard:        { title: 'ACCIDENT DASHBOARD', crumb: 'Analytics & Hotspots'  },
+  map:              { title: 'LIVE TACTICAL MAP',   crumb: 'Operational Core'      },
+  reports:          { title: 'PERFORMANCE REPORTS', crumb: 'SLA Metrics & Logs'    },
+  'resource-admin': { title: 'RESOURCE MANAGER',    crumb: 'Field Unit Registry'   },
 };
 
-// ── Admin dashboard shell (exact copy of original App render, untouched) ───
+// ── Admin dashboard shell ───────────────────────────────────────────────────
 function AdminDashboard() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [systemTime,  setSystemTime]  = useState('');
@@ -51,8 +55,8 @@ function AdminDashboard() {
     return () => clearInterval(id);
   }, []);
 
-  const ViewComponent = VIEWS[currentView];
-  const { title, crumb } = VIEW_LABELS[currentView];
+  const ViewComponent = VIEWS[currentView] ?? AccidentDashboard;
+  const { title, crumb } = VIEW_LABELS[currentView] ?? VIEW_LABELS.dashboard;
 
   return (
     <div className="flex h-screen overflow-hidden bg-base">
@@ -82,6 +86,13 @@ function AdminDashboard() {
               <span className="dot-red animate-pulse"></span>
               <span className="text-[10px] font-mono text-accent-red font-semibold">3 ACTIVE</span>
             </div>
+            {/* User Portal link */}
+            <a
+              href="#/user"
+              className="text-[9px] font-mono text-muted hover:text-primary border border-border hover:border-muted rounded-[3px] px-2 py-1 transition-all"
+            >
+              User Portal →
+            </a>
             {/* Mumbai / Region */}
             <div className="flex items-center gap-1.5 border-l border-border pl-4">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#484f58" strokeWidth="2">
@@ -104,11 +115,35 @@ function AdminDashboard() {
   );
 }
 
-// ── User portal placeholder ─────────────────────────────────────────────────
+// ── User portal (live resource map) ────────────────────────────────────────
 function UserPortal() {
   return (
-    <div className="min-h-screen bg-black text-white p-8">
-      User Portal (Coming Soon)
+    <div className="flex h-screen overflow-hidden bg-base">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Minimal top bar */}
+        <header className="flex-shrink-0 h-10 border-b border-border bg-panel flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted font-mono uppercase tracking-wider">RoadSoS</span>
+            <span className="text-muted">/</span>
+            <span className="text-[11px] font-semibold text-primary tracking-wide">LIVE RESOURCE MAP</span>
+            <span className="text-muted mx-1">·</span>
+            <span className="text-[10px] text-secondary">Emergency Services</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="dot-green animate-pulse-slow"></span>
+            <span className="text-[9px] font-mono text-accent-green">GET /api/v1/resources</span>
+            <a
+              href="#/admin"
+              className="text-[9px] font-mono text-muted hover:text-primary border border-border hover:border-muted rounded-[3px] px-2 py-1 transition-all ml-3"
+            >
+              ← Admin
+            </a>
+          </div>
+        </header>
+        <main className="flex-1 overflow-hidden">
+          <UserPortalView />
+        </main>
+      </div>
     </div>
   );
 }
