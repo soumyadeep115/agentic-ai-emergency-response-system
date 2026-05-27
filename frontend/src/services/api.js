@@ -180,6 +180,26 @@ export async function getMapState() {
   };
 }
 
+// ── Resources: all field units (hospitals, ambulances, police, etc.) ─────────
+// GET /api/v1/resources — already implemented in backend.
+export async function getResources() {
+  const result = await safeFetch(`${BASE}/api/v1/resources`);
+  if (result.data) {
+    return {
+      data: {
+        hospitals:    result.data.hospitals    ?? [],
+        police:       result.data.police       ?? [],
+        ambulances:   result.data.ambulances   ?? [],
+        repair_shops: result.data.repair_shops ?? [],
+        tow_services: result.data.tow_services ?? [],
+      },
+      source: 'live',
+      error: null,
+    };
+  }
+  return { data: null, source: 'offline', error: result.error };
+}
+
 // ── VIEW C: Incident reports ──────────────────────────────────────────────────
 // Planned endpoint — not yet implemented on backend.
 export async function getIncidents() {
