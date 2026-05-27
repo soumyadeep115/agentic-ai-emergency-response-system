@@ -5,18 +5,17 @@ Multi-Agent Emergency Dispatch Orchestration System
 PROJECT OVERVIEW
 ===========================================================
 
-RoadSoS is an AI-powered emergency response coordination system that dynamically allocates ambulances, police units, hospital resources, and optimal traffic routes in real time using:
+RoadSoS is a full-stack AI-powered multi-agent emergency response orchestration platform that enables real-time incident reporting, intelligent emergency resource allocation, persistent operational resource management, live dispatch analytics, and interactive user/admin dashboards.
 
-- LangGraph for agent orchestration
-- NetworkX for graph optimization
-- MySQL for live operational state
-- FastAPI for API exposure
+The platform integrates:
 
-It is an AI-powered multi-agent emergency response orchestration platform that autonomously analyzes incidents, allocates emergency resources, computes optimal dispatch routes, coordinates police response, evaluates hospital capacity, and provides real-time operational analytics through an interactive tactical dashboard.
-
-The system combines LangGraph agent orchestration, FastAPI APIs, SQLAlchemy persistence, MySQL analytics, NetworkX route optimization, and a React-based command dashboard to simulate real-world intelligent emergency response operations.
-
-It simulates real-world emergency response decision-making through adaptive multi-agent coordination.
+- LangGraph for autonomous agent orchestration
+- FastAPI for backend APIs
+- React + Vite for dual dashboard interfaces
+- MySQL for persistent operational state
+- NetworkX for route optimization
+- SQLAlchemy for dispatch logging
+- Dynamic JSON → MySQL resource synchronization
 
 ===========================================================
 PROBLEM SOLVED
@@ -109,14 +108,47 @@ Stored metadata includes:
 
 -----------------------------------------------------------
 
+8. Persistent Resource Administration
+
+Admin operators can dynamically:
+
+- Add hospitals
+- Add ambulances
+- Add police units
+- Add repair shops
+- Add tow services
+
+Changes persist through:
+
+Admin Dashboard → JSON Sync → MySQL → Frontend Live Refresh
+
+-----------------------------------------------------------
+
+9. Dual Dashboard Architecture
+
+The platform now supports:
+
+- Admin Command Center
+- Citizen/User Emergency Reporting Portal
+
+-----------------------------------------------------------
+
+10. Resource Persistence Layer
+
+Resources survive browser refresh and backend restart through synchronized database persistence.
+
+-----------------------------------------------------------
+
 ===========================================================
 TECH STACK
 ===========================================================
 
-Frontend
+Frontend:
 - React
 - Vite
 - TailwindCSS
+- React Router
+- Dynamic Polling Hooks
 
 Backend:
 - Python
@@ -146,31 +178,57 @@ Architecture
 Configuration:
 python-dotenv
 
+State Synchronization:
+- JSON Resource Sync Layer
+
 ===========================================================
 SYSTEM ARCHITECTURE
 ===========================================================
 
-Incident Input
+Landing Page
       ↓
-Incident Assessment Agent
-      ↓
-Severity Branch
- ┌───────────────┬───────────────┐
- ↓               ↓
-Police Agent   Skip
-      ↓
-Ambulance Allocation Agent
-      ↓
-Hospital Evaluation Agent
-      ↓
-Capacity Branch
- ┌───────────────┬───────────────┐
- ↓               ↓
-Route Agent   Escalation Agent
-      ↓
-Dispatch Coordinator
-      ↓
-Final Emergency Dispatch Decision
+Role Selection
+ ┌──────────────────────┬──────────────────────┐
+ ↓                      ↓
+User Portal         Admin Dashboard
+ ↓                      ↓
+Incident Report     Resource Management
+ ↓                      ↓
+POST /dispatch      POST /api/v1/save-resources
+ ↓                      ↓
+FastAPI API Layer   resources.json
+        ↓                ↓
+        └──────→ import_resources.py
+                     ↓
+                   MySQL
+                     ↓
+          ┌─────────────────────────────┐
+          │ LangGraph Dispatch Engine    │
+          └─────────────────────────────┘
+                     ↓
+            Incident Assessment Agent
+                     ↓
+               Severity Evaluation
+            ┌───────────────┬───────────────┐
+            ↓               ↓
+     Police Coordination   Skip
+            ↓
+     Ambulance Allocation Agent
+            ↓
+      Hospital Evaluation Agent
+            ↓
+      Capacity Decision Branch
+       ┌─────────────┬─────────────┐
+       ↓             ↓
+ Route Agent   Escalation Agent
+       ↓             ↓
+       └──────→ Dispatch Decision Agent
+                     ↓
+             Dispatch Logs (MySQL)
+                     ↓
+        Analytics Dashboard + Tactical Map
+                     ↓
+           Live User/Admin Visualization
 
 ===========================================================
 AGENTS
@@ -264,6 +322,14 @@ Incident Input
 → Analytics Computation  
 → React Dashboard Live Update
 
+Admin Input
+→ FastAPI Save Endpoint
+→ resources.json
+→ Resource Import Pipeline
+→ MySQL Persistence
+→ API Retrieval
+→ Frontend Refresh Persistence
+
 ===========================================================
 Dynamic Analytics Validation
 ===========================================================
@@ -348,6 +414,28 @@ Columns:
 - dispatch_decision
 - created_at
 
+-----------------------------------------------------------
+
+6. repair_shops
+
+- id
+- name
+- latitude
+- longitude
+- status
+
+-----------------------------------------------------------
+
+7. tow_services
+
+- id
+- name
+- latitude
+- longitude
+- status
+
+-----------------------------------------------------------
+
 ===========================================================
 API ENDPOINTS
 ===========================================================
@@ -357,6 +445,8 @@ GET /dispatch-history
 GET /api/v1/analytics/hotspots
 GET /api/v1/analytics/map-state
 GET /api/v1/reports/incidents
+GET /api/v1/resources
+POST /api/v1/save-resources
 
 Returns complete historical dispatch audit logs including:
 
@@ -384,7 +474,29 @@ Returns:
 - escalation status
 - final dispatch decision
 
+GET /api/v1/resources
+Returns live operational resources from MySQL
+
+POST /api/v1/save-resources
+Persists admin dashboard resource changes to JSON and synchronizes to MySQL
+
 -----------------------------------------------------------
+
+===========================================================
+USER INTERFACES
+===========================================================
+
+1. Landing Page
+Role-based system entry
+
+2. Admin Dashboard
+Operational resource management
+
+3. Tactical Analytics Dashboard
+Live dispatch intelligence
+
+4. User Emergency Portal
+Citizen emergency reporting interface
 
 ===========================================================
 SETUP INSTRUCTIONS
@@ -496,14 +608,11 @@ These fixes enabled complete end-to-end autonomous dispatch execution.
 KEY ACHIEVEMENT
 ===========================================================
 
-RoadSoS demonstrates:
+RoadSoS is a fully integrated production-grade autonomous emergency response orchestration prototype featuring:
 
-- Multi-agent adaptive orchestration
-- Dijkstra-based shortest path routing
-- Dynamic operational state updates from MySQL
-- Persistent dispatch history tracking
-- Fault-tolerant escalation workflows
-- RESTful emergency dispatch APIs
-- Production-grade backend persistence via SQLAlchemy ORM
-
-It is a fully integrated full-stack autonomous emergency response orchestration prototype demonstrating live adaptive decision intelligence.
+- Persistent operational resource synchronization
+- Multi-agent adaptive dispatch intelligence
+- Full-stack dual-portal architecture
+- Real-time tactical analytics
+- Database-backed live state management
+- Fault-tolerant emergency fallback workflows
