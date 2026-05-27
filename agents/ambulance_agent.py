@@ -25,12 +25,23 @@ def allocate_ambulance(state: EmergencyState):
             (ambulance_id, score, eta, equipment)
         )
 
+    if not scored_ambulances:
+        state["ambulance_candidates"] = []
+        state["selected_ambulance"] = "Unavailable"
+        state["dispatch_decision"] = "No ambulances available"
+
+        cursor.close()
+        conn.close()
+        return state
+
     scored_ambulances.sort(key=lambda x: x[1], reverse=True)
 
     state["ambulance_candidates"] = [
         f"{a[0]} (ETA: {a[2]} min, Equipment: {a[3]}, Score: {round(a[1],2)})"
         for a in scored_ambulances
     ]
+
+    state["selected_ambulance"] = scored_ambulances[0][0]
 
     cursor.close()
     conn.close()

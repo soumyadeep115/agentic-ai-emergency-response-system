@@ -1,4 +1,3 @@
-from typing import TypedDict
 from langgraph.graph import StateGraph, END
 from graph.state import EmergencyState
 from agents.incident_agent import assess_incident
@@ -8,14 +7,34 @@ from agents.route_agent import plan_route
 from agents.police_agent import coordinate_police
 from agents.escalation_agent import escalate_emergency
 
+
 # -------------------------
 # Node: Decide dispatch
 # -------------------------
 def dispatch_decision(state: EmergencyState):
 
-    best_ambulance = state["ambulance_candidates"][0]
-    best_hospital = state["hospital_candidates"][0]
-    best_route = state["route_candidates"][0]
+    ambulances = state.get("ambulance_candidates", [])
+    hospitals = state.get("hospital_candidates", [])
+    routes = state.get("route_candidates", [])
+
+    if not ambulances:
+        state["selected_ambulance"] = "Unavailable"
+        state["dispatch_decision"] = "Dispatch failed: No ambulances available"
+        return state
+
+    if not hospitals:
+        state["selected_hospital"] = "Unavailable"
+        state["dispatch_decision"] = "Dispatch failed: No hospitals available"
+        return state
+
+    if not routes:
+        state["selected_route"] = "Unavailable"
+        state["dispatch_decision"] = "Dispatch failed: No route available"
+        return state
+
+    best_ambulance = ambulances[0]
+    best_hospital = hospitals[0]
+    best_route = routes[0]
 
     state["selected_ambulance"] = best_ambulance
     state["selected_hospital"] = best_hospital
@@ -29,32 +48,44 @@ def dispatch_decision(state: EmergencyState):
 
     return state
 
+
 # -------------------------
 # Node: route severity
 # -------------------------
 def route_severity(state: EmergencyState):
-    if state["severity"] >= 8:
+    if state.get("severity", 0) >= 8:
         return "critical"
     return "normal"
+
 
 # -------------------------
 # Node: Hospital capacity check
 # -------------------------
 def route_hospital_capacity(state: EmergencyState):
 
-    best_hospital = state["hospital_candidates"][0]
+    hospitals = state.get("hospital_candidates", [])
 
-    beds = int(
-        best_hospital.split("Beds: ")[1].split(",")[0]
-    )
-
-    if beds < 20:
+    if not hospitals:
         return "overloaded"
 
-    return "available"
+    best_hospital = hospitals[0]
+
+    try:
+        beds = int(
+            best_hospital.split("Beds: ")[1].split(",")[0]
+        )
+
+        if beds < 20:
+            return "overloaded"
+
+        return "available"
+
+    except:
+        return "overloaded"
+
 
 # -------------------------
-# Edges of graph
+# Graph construction
 # -------------------------
 builder = StateGraph(EmergencyState)
 
@@ -68,6 +99,7 @@ builder.add_node("escalate_emergency", escalate_emergency)
 
 builder.set_entry_point("assess_incident")
 
+
 builder.add_conditional_edges(
     "assess_incident",
     route_severity,
@@ -76,6 +108,7 @@ builder.add_conditional_edges(
         "normal": "allocate_ambulance"
     }
 )
+
 builder.add_conditional_edges(
     "evaluate_hospital",
     route_hospital_capacity,
@@ -84,6 +117,7 @@ builder.add_conditional_edges(
         "overloaded": "escalate_emergency"
     }
 )
+
 builder.add_edge("allocate_ambulance", "evaluate_hospital")
 builder.add_edge("plan_route", "dispatch_decision")
 builder.add_edge("coordinate_police", "allocate_ambulance")
@@ -94,14 +128,14 @@ graph = builder.compile()
 
 
 # -------------------------
-# Dispatch function
+# Dispatch runner
 # -------------------------
 def run_dispatch(initial_state):
     return graph.invoke(initial_state)
 
 
 # -------------------------
-# Local test run
+# Local test
 # -------------------------
 if __name__ == "__main__":
 

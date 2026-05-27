@@ -1,7 +1,39 @@
 {
   "hospitals": [],
-  "police": [],
-  "ambulances": [],
-  "repair_shops": [],
-  "tow_services": []
+  "police": [
+    {
+      "id": "pol_001",
+      "name": "pol_001",
+      "latitude": 5,
+      "longitude": 95,
+      "status": "available"
+    }
+  ],
+  "ambulances": [
+    {
+      "id": "amb_001",
+      "name": "test",
+      "latitude": 89,
+      "longitude": 67,
+      "status": "available"
+    }
+  ],
+  "repair_shops": [
+    {
+      "id": "RS002",
+      "name": "Metro Auto",
+      "latitude": 43,
+      "longitude": 32,
+      "status": "available"
+    }
+  ],
+  "tow_services": [
+    {
+      "id": "tow_001",
+      "name": "test",
+      "latitude": 89,
+      "longitude": 98,
+      "status": "available"
+    }
+  ]
 }
