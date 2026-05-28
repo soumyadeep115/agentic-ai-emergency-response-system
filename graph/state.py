@@ -6,13 +6,15 @@ class EmergencyState(TypedDict):
     incident_type: str
     casualties: int
     severity: int
-    incident_location: str          # human-readable / node name (kept for NetworkX fallback)
-    incident_lat: Optional[float]   # device location latitude
-    incident_lng: Optional[float]   # device location longitude
+    incident_location: str
+    incident_lat: Optional[float]
+    incident_lng: Optional[float]
 
     # ── Police ────────────────────────────────────────────────
     police_required: bool
     police_status: str
+    selected_police: Optional[str]        # unit_id of selected police unit
+    selected_police_eta: Optional[int]    # ETA in minutes as integer
 
     # ── Candidates ────────────────────────────────────────────
     ambulance_candidates: List[str]
@@ -22,16 +24,16 @@ class EmergencyState(TypedDict):
     # ── Selections ────────────────────────────────────────────
     selected_ambulance: str
     selected_hospital: str
-    selected_route: str             # human-readable string for dispatch_decision text
+    selected_route: str
 
-    # ── Selected ambulance coordinates (set by ambulance agent) ──
+    # ── Selected ambulance coordinates ────────────────────────
     selected_ambulance_lat: Optional[float]
     selected_ambulance_lng: Optional[float]
 
-    # ── Route output (structured, for dispatch_logs + map) ───
-    route_geometry: Optional[dict]  # GeoJSON LineString or None
+    # ── Route output ──────────────────────────────────────────
+    route_geometry: Optional[dict]
     real_eta_seconds: Optional[int]
-    route_source: Optional[str]     # "ORS" | "NetworkX"
+    route_source: Optional[str]
 
     # ── Escalation ────────────────────────────────────────────
     escalation_status: str

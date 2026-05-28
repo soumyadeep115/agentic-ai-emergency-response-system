@@ -17,13 +17,14 @@ class DispatchLog(Base):
     selected_route     = Column(String(255))
 
     police_status      = Column(String(255))
-    escalation_status  = Column(String(255))
+    selected_police    = Column(String(50),  nullable=True)   # NEW
+    selected_police_eta = Column(Integer,    nullable=True)   # NEW — minutes
 
+    escalation_status  = Column(String(255))
     dispatch_decision  = Column(Text)
 
-    # ── Route metadata (Phase 5+) ─────────────────────────────
-    route_geometry     = Column(JSON,    nullable=True)   # GeoJSON LineString
-    real_eta_seconds   = Column(Integer, nullable=True)   # ORS or NetworkX ETA
-    route_source       = Column(String(10), nullable=True)  # "ORS" | "NetworkX"
+    route_geometry     = Column(JSON,        nullable=True)
+    real_eta_seconds   = Column(Integer,     nullable=True)
+    route_source       = Column(String(10),  nullable=True)
 
     created_at         = Column(TIMESTAMP, server_default=func.now())

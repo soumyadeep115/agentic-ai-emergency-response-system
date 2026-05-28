@@ -18,17 +18,14 @@ def coordinate_police(state: EmergencyState):
     scored_units = []
 
     for unit_id, eta, clearance in police_units:
-
         score = (0.7 * clearance) - (0.3 * eta)
-
-        scored_units.append(
-            (unit_id, score, eta, clearance)
-        )
+        scored_units.append((unit_id, score, eta, clearance))
 
     if not scored_units:
-        state["police_required"] = False
-        state["police_status"] = "No police units available"
-
+        state["police_required"]    = False
+        state["police_status"]      = "No police units available"
+        state["selected_police"]    = None
+        state["selected_police_eta"] = None
         cursor.close()
         conn.close()
         return state
@@ -38,6 +35,8 @@ def coordinate_police(state: EmergencyState):
     best_unit = scored_units[0]
 
     state["police_required"] = True
+    state["selected_police"] = best_unit[0]                  # unit_id string
+    state["selected_police_eta"] = best_unit[2]              # ETA as integer (minutes)
     state["police_status"] = (
         f"{best_unit[0]} dispatched "
         f"(ETA: {best_unit[2]} min, "

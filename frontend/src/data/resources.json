@@ -2,34 +2,33 @@
   "hospitals": [
     {
       "id": "HOSP_001",
-      "name": "Fortis",
-      "latitude": 18,
-      "longitude": 73,
+      "name": "Fortis Mulund",
+      "latitude": 19.1748,
+      "longitude": 73.0243,
       "available_beds": 80,
-      "icu_readiness": 55,
-      "trauma_score": 58,
-      "status": "available"
+      "icu_readiness": 90,
+      "trauma_score": 85
     }
   ],
   "police": [
     {
       "id": "POL_001",
-      "name": "Test",
-      "latitude": 19.2,
+      "name": "Mumbai Police HQ",
+      "latitude": 19.076,
       "longitude": 72.8777,
-      "eta": 4,
-      "clearance_capacity": 5,
+      "eta": 5,
+      "clearance_capacity": 95,
       "status": "available"
     }
   ],
   "ambulances": [
     {
       "id": "AMB_001",
-      "name": "Test",
-      "latitude": 20,
-      "longitude": 72,
-      "eta": 10,
-      "equipment_score": 75,
+      "name": "Central Ambulance Hub",
+      "latitude": 19.0896,
+      "longitude": 72.8656,
+      "eta": 4,
+      "equipment_score": 90,
       "status": "available"
     }
   ],
