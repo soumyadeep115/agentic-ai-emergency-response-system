@@ -46,21 +46,28 @@ const RESOURCE_TYPES = [
 
 const STATUS_OPTIONS = ['available', 'busy', 'offline'];
 
-// ── Per-tab NAME placeholder text ────────────────────────────────────────────
-const NAME_PLACEHOLDERS = {
-  hospitals:    'e.g. Fortis Mulund',
-  police:       'e.g. Mumbai Police HQ',
-  ambulances:   'e.g. Central Ambulance Hub',
-  repair_shops: 'e.g. Quick Auto Repair',
-  tow_services: 'e.g. Express Towing Mumbai',
+// ── Empty entry shapes per resource type ─────────────────────────────────────
+const EMPTY_ENTRIES = {
+  hospitals: {
+    id: '', name: '', latitude: '', longitude: '',
+    available_beds: '', icu_readiness: '', trauma_score: '',
+  },
+  police: {
+    id: '', name: '', latitude: '', longitude: '',
+    eta: '', clearance_capacity: '', status: 'available',
+  },
+  ambulances: {
+    id: '', name: '', latitude: '', longitude: '',
+    eta: '', equipment_score: '', status: 'available',
+  },
+  repair_shops: {
+    id: '', name: '', latitude: '', longitude: '', status: 'available',
+  },
+  tow_services: {
+    id: '', name: '', latitude: '', longitude: '', status: 'available',
+  },
 };
 
-// Types that expose the ambulance-count field
-const SHOWS_AMBULANCE_COUNT = new Set(['hospitals', 'ambulances']);
-
-const EMPTY_ENTRY = { id: '', name: '', latitude: '', longitude: '', status: 'available', ambulanceCount: '' };
-
-// ── Persists resources to localStorage (mirrors resources.json schema) ────────
 const LS_KEY = 'roadsos_resources';
 
 function loadResources() {
@@ -108,12 +115,249 @@ function Field({ id, label, type = 'text', value, onChange, placeholder, require
   );
 }
 
+// ── Per-type form fields renderer ─────────────────────────────────────────────
+function TypeFields({ typeKey, form, setForm }) {
+  const f = (field) => (v) => setForm(p => ({ ...p, [field]: v }));
+
+  if (typeKey === 'hospitals') {
+    return (
+      <>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <Field id="h-id"    label="ID"        value={form.id}        onChange={f('id')}        placeholder="e.g. HOSP_001" required />
+          <Field id="h-name"  label="Name"      value={form.name}      onChange={f('name')}      placeholder="e.g. Fortis Mulund" required />
+          <Field id="h-lat"   label="Latitude"  value={form.latitude}  onChange={f('latitude')}  placeholder="e.g. 19.1748" type="number" required />
+          <Field id="h-lng"   label="Longitude" value={form.longitude} onChange={f('longitude')} placeholder="e.g. 73.0243" type="number" required />
+          <Field id="h-beds"  label="Available Beds"  value={form.available_beds}  onChange={f('available_beds')}  placeholder="e.g. 80"  type="number" required />
+          <Field id="h-icu"   label="ICU Readiness"   value={form.icu_readiness}   onChange={f('icu_readiness')}   placeholder="e.g. 90"  type="number" required />
+        </div>
+        <Field id="h-trauma" label="Trauma Score" value={form.trauma_score} onChange={f('trauma_score')} placeholder="e.g. 85" type="number" required />
+      </>
+    );
+  }
+
+  if (typeKey === 'police') {
+    return (
+      <>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <Field id="p-id"   label="ID"        value={form.id}        onChange={f('id')}        placeholder="e.g. POL_001" required />
+          <Field id="p-name" label="Name"      value={form.name}      onChange={f('name')}      placeholder="e.g. Mumbai Police HQ" required />
+          <Field id="p-lat"  label="Latitude"  value={form.latitude}  onChange={f('latitude')}  placeholder="e.g. 19.0760" type="number" required />
+          <Field id="p-lng"  label="Longitude" value={form.longitude} onChange={f('longitude')} placeholder="e.g. 72.8777" type="number" required />
+          <Field id="p-eta"  label="ETA (min)" value={form.eta}       onChange={f('eta')}       placeholder="e.g. 5"       type="number" required />
+          <Field id="p-cap"  label="Clearance Capacity" value={form.clearance_capacity} onChange={f('clearance_capacity')} placeholder="e.g. 95" type="number" required />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label style={{ fontSize: '9px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
+            Status
+          </label>
+          <select
+            value={form.status}
+            onChange={(e) => setForm(p => ({ ...p, status: e.target.value }))}
+            style={{
+              background: '#0d1117', border: '1px solid #30363d', borderRadius: '3px',
+              color: '#e6edf3', fontSize: '11px', padding: '6px 8px', outline: 'none',
+              fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer',
+            }}
+          >
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      </>
+    );
+  }
+
+  if (typeKey === 'ambulances') {
+    return (
+      <>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <Field id="a-id"    label="ID"              value={form.id}             onChange={f('id')}             placeholder="e.g. AMB_001"           required />
+          <Field id="a-name"  label="Hub Name"        value={form.name}           onChange={f('name')}           placeholder="e.g. Central Ambulance" required />
+          <Field id="a-lat"   label="Latitude"        value={form.latitude}       onChange={f('latitude')}       placeholder="e.g. 19.0760"           type="number" required />
+          <Field id="a-lng"   label="Longitude"       value={form.longitude}      onChange={f('longitude')}      placeholder="e.g. 72.8777"           type="number" required />
+          <Field id="a-eta"   label="ETA (min)"       value={form.eta}            onChange={f('eta')}            placeholder="e.g. 4"                 type="number" required />
+          <Field id="a-equip" label="Equipment Score" value={form.equipment_score} onChange={f('equipment_score')} placeholder="e.g. 90"               type="number" required />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label style={{ fontSize: '9px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
+            Status
+          </label>
+          <select
+            value={form.status}
+            onChange={(e) => setForm(p => ({ ...p, status: e.target.value }))}
+            style={{
+              background: '#0d1117', border: '1px solid #30363d', borderRadius: '3px',
+              color: '#e6edf3', fontSize: '11px', padding: '6px 8px', outline: 'none',
+              fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer',
+            }}
+          >
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      </>
+    );
+  }
+
+  // repair_shops + tow_services — unchanged layout
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <Field id={`${typeKey}-id`}   label="ID"        value={form.id}        onChange={f('id')}        placeholder="e.g. RS_001"    required />
+        <Field id={`${typeKey}-name`} label="Name"      value={form.name}      onChange={f('name')}      placeholder="e.g. Quick Auto" required />
+        <Field id={`${typeKey}-lat`}  label="Latitude"  value={form.latitude}  onChange={f('latitude')}  placeholder="e.g. 19.1748"   type="number" required />
+        <Field id={`${typeKey}-lng`}  label="Longitude" value={form.longitude} onChange={f('longitude')} placeholder="e.g. 73.0243"   type="number" required />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label style={{ fontSize: '9px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
+          Status
+        </label>
+        <select
+          value={form.status}
+          onChange={(e) => setForm(p => ({ ...p, status: e.target.value }))}
+          style={{
+            background: '#0d1117', border: '1px solid #30363d', borderRadius: '3px',
+            color: '#e6edf3', fontSize: '11px', padding: '6px 8px', outline: 'none',
+            fontFamily: "'JetBrains Mono', monospace", cursor: 'pointer',
+          }}
+        >
+          {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+    </>
+  );
+}
+
+// ── Build JSON entry per type ─────────────────────────────────────────────────
+function buildEntry(typeKey, form) {
+  const lat = parseFloat(form.latitude);
+  const lng = parseFloat(form.longitude);
+
+  if (typeKey === 'hospitals') {
+    return {
+      id: form.id.trim(),
+      name: form.name.trim(),
+      latitude: lat,
+      longitude: lng,
+      available_beds: Number(form.available_beds),
+      icu_readiness: Number(form.icu_readiness),
+      trauma_score: Number(form.trauma_score),
+    };
+  }
+
+  if (typeKey === 'police') {
+    return {
+      id: form.id.trim(),
+      name: form.name.trim(),
+      latitude: lat,
+      longitude: lng,
+      eta: Number(form.eta),
+      clearance_capacity: Number(form.clearance_capacity),
+      status: form.status,
+    };
+  }
+
+  if (typeKey === 'ambulances') {
+    return {
+      id: form.id.trim(),
+      name: form.name.trim(),
+      latitude: lat,
+      longitude: lng,
+      eta: Number(form.eta),
+      equipment_score: Number(form.equipment_score),
+      status: form.status,
+    };
+  }
+
+  // repair_shops + tow_services
+  return {
+    id: form.id.trim(),
+    name: form.name.trim(),
+    latitude: lat,
+    longitude: lng,
+    status: form.status,
+  };
+}
+
+// ── Populate form from existing record for editing ────────────────────────────
+function entryToForm(typeKey, r) {
+  if (typeKey === 'hospitals') {
+    return {
+      id: r.id ?? '',
+      name: r.name ?? '',
+      latitude: String(r.latitude ?? ''),
+      longitude: String(r.longitude ?? ''),
+      available_beds: String(r.available_beds ?? ''),
+      icu_readiness: String(r.icu_readiness ?? ''),
+      trauma_score: String(r.trauma_score ?? ''),
+    };
+  }
+  if (typeKey === 'police') {
+    return {
+      id: r.id ?? '',
+      name: r.name ?? '',
+      latitude: String(r.latitude ?? ''),
+      longitude: String(r.longitude ?? ''),
+      eta: String(r.eta ?? ''),
+      clearance_capacity: String(r.clearance_capacity ?? ''),
+      status: r.status ?? 'available',
+    };
+  }
+  if (typeKey === 'ambulances') {
+    return {
+      id: r.id ?? '',
+      name: r.name ?? '',
+      latitude: String(r.latitude ?? ''),
+      longitude: String(r.longitude ?? ''),
+      eta: String(r.eta ?? ''),
+      equipment_score: String(r.equipment_score ?? ''),
+      status: r.status ?? 'available',
+    };
+  }
+  return {
+    id: r.id ?? '',
+    name: r.name ?? '',
+    latitude: String(r.latitude ?? ''),
+    longitude: String(r.longitude ?? ''),
+    status: r.status ?? 'available',
+  };
+}
+
+// ── Validate form has required coordinate fields ──────────────────────────────
+function validateForm(typeKey, form) {
+  const lat = parseFloat(form.latitude);
+  const lng = parseFloat(form.longitude);
+  if (!form.id.trim() || !form.name.trim() || isNaN(lat) || isNaN(lng)) {
+    return 'Fill all fields with valid coordinates';
+  }
+  if (typeKey === 'hospitals') {
+    if (!form.available_beds || !form.icu_readiness || !form.trauma_score) {
+      return 'Fill all hospital operational fields';
+    }
+  }
+  if (typeKey === 'police') {
+    if (!form.eta || !form.clearance_capacity) {
+      return 'Fill all police operational fields';
+    }
+  }
+  if (typeKey === 'ambulances') {
+    if (!form.eta || !form.equipment_score) {
+      return 'Fill all ambulance operational fields';
+    }
+  }
+  return null;
+}
+
 // ── Resource form panel ───────────────────────────────────────────────────────
 function ResourceForm({ type, resources, onSave }) {
-  const [form, setForm] = useState({ ...EMPTY_ENTRY });
-  const showAmbulanceCount = SHOWS_AMBULANCE_COUNT.has(type.key);
+  const [form, setForm] = useState({ ...EMPTY_ENTRIES[type.key] });
   const [editIdx, setEditIdx] = useState(null);
   const [feedback, setFeedback] = useState(null);
+
+  // Reset form when tab changes
+  useEffect(() => {
+    setForm({ ...EMPTY_ENTRIES[type.key] });
+    setEditIdx(null);
+    setFeedback(null);
+  }, [type.key]);
 
   const flash = (msg, ok = true) => {
     setFeedback({ msg, ok });
@@ -122,314 +366,103 @@ function ResourceForm({ type, resources, onSave }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const lat = parseFloat(form.latitude);
-    const lng = parseFloat(form.longitude);
-    if (!form.id.trim() || !form.name.trim() || isNaN(lat) || isNaN(lng)) {
-      flash('Fill all fields with valid coordinates', false);
-      return;
-    }
+    const error = validateForm(type.key, form);
+    if (error) { flash(error, false); return; }
 
-    const buildEntry = () => {
-      if (type.key === "hospitals") {
-        return {
-          hospital_id: form.id.trim(),
-          available_beds: Number(form.latitude),
-          icu_readiness: Number(form.longitude),
-          trauma_score: Number(form.name)
-        };
-      }
-
-      if (type.key === "police") {
-        return {
-          unit_id: form.id.trim(),
-          eta: Number(form.latitude),
-          clearance_capacity: Number(form.longitude),
-          status: form.status
-        };
-      }
-
-      if (type.key === "ambulances") {
-        return {
-          ambulance_id: form.id.trim(),
-          eta: Number(form.latitude),
-          equipment_score: Number(form.longitude),
-          status: form.status,
-          location: form.name.trim()
-        };
-      }
-
-      return {
-        id: form.id.trim(),
-        name: form.name.trim(),
-        latitude: lat,
-        longitude: lng,
-        status: form.status
-      };
-    };
-
-    const entry = buildEntry();
-
+    const entry = buildEntry(type.key, form);
     const updated = [...resources];
+
     if (editIdx !== null) {
       updated[editIdx] = entry;
-      flash(`Updated successfully`);
+      flash('Updated successfully');
       setEditIdx(null);
     } else {
-      if (updated.find(
-        r =>
-          r.id === entry.id ||
-          r.hospital_id === entry.hospital_id ||
-          r.unit_id === entry.unit_id ||
-          r.ambulance_id === entry.ambulance_id
-      )) {
+      if (updated.find(r => r.id === entry.id)) {
         flash(`ID "${entry.id}" already exists`, false);
         return;
       }
       updated.push(entry);
-      flash(`Added successfully`);
+      flash('Added successfully');
     }
+
     onSave(updated);
-    setForm({ ...EMPTY_ENTRY });
+    setForm({ ...EMPTY_ENTRIES[type.key] });
   };
 
   const handleEdit = (idx) => {
-    const r = resources[idx];
-
-    if (type.key === "hospitals") {
-      setForm({
-        id: r.hospital_id,
-        name: String(r.trauma_score),
-        latitude: String(r.available_beds),
-        longitude: String(r.icu_readiness),
-        status: "available"
-      });
-    } else if (type.key === "police") {
-      setForm({
-        id: r.unit_id,
-        name: "",
-        latitude: String(r.eta),
-        longitude: String(r.clearance_capacity),
-        status: r.status
-      });
-    } else if (type.key === "ambulances") {
-      setForm({
-        id: r.ambulance_id,
-        name: r.location,
-        latitude: String(r.eta),
-        longitude: String(r.equipment_score),
-        status: r.status
-      });
-    } else {
-      setForm({
-        id: r.id,
-        name: r.name,
-        latitude: String(r.latitude),
-        longitude: String(r.longitude),
-        status: r.status
-      });
-    }
-
+    setForm(entryToForm(type.key, resources[idx]));
     setEditIdx(idx);
   };
 
   const handleDelete = (idx) => {
     const updated = resources.filter((_, i) => i !== idx);
     onSave(updated);
-    if (editIdx === idx) { setForm({ ...EMPTY_ENTRY }); setEditIdx(null); }
+    if (editIdx === idx) { setForm({ ...EMPTY_ENTRIES[type.key] }); setEditIdx(null); }
     flash('Entry removed');
   };
 
-  const handleCancel = () => { setForm({ ...EMPTY_ENTRY }); setEditIdx(null); };
+  const handleCancel = () => {
+    setForm({ ...EMPTY_ENTRIES[type.key] });
+    setEditIdx(null);
+  };
 
   const t = type;
   const isEditing = editIdx !== null;
 
   return (
-    <div
-      style={{
-        background: '#161b22',
-        border: `1px solid ${t.color}30`,
-        borderRadius: '4px',
-        overflow: 'hidden',
-      }}
-    >
+    <div style={{ background: '#161b22', border: `1px solid ${t.color}30`, borderRadius: '4px', overflow: 'hidden' }}>
       {/* Panel header */}
-      <div
-        style={{
-          background: `${t.accent}0.08)`,
-          borderBottom: `1px solid ${t.color}25`,
-          padding: '10px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
+      <div style={{
+        background: `${t.accent}0.08)`, borderBottom: `1px solid ${t.color}25`,
+        padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px',
+      }}>
         <span style={{ fontSize: '14px' }}>{t.icon}</span>
         <span style={{ fontSize: '11px', fontWeight: 700, color: t.color, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
           {t.label}
         </span>
-        <span
-          style={{
-            marginLeft: 'auto',
-            fontSize: '9px',
-            fontFamily: 'monospace',
-            background: `${t.accent}0.12)`,
-            color: t.color,
-            border: `1px solid ${t.color}40`,
-            borderRadius: '2px',
-            padding: '2px 6px',
-          }}
-        >
+        <span style={{
+          marginLeft: 'auto', fontSize: '9px', fontFamily: 'monospace',
+          background: `${t.accent}0.12)`, color: t.color,
+          border: `1px solid ${t.color}40`, borderRadius: '2px', padding: '2px 6px',
+        }}>
           {resources.length} RECORDS
         </span>
       </div>
 
       <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <Field
-              id={`${t.key}-id`}
-              label="ID"
-              value={form.id}
-              onChange={(v) => setForm(p => ({ ...p, id: v }))}
-              placeholder="e.g. HOSP_001"
-              required
-            />
-            <Field
-              id={`${t.key}-name`}
-              label="Name"
-              value={form.name}
-              onChange={(v) => setForm(p => ({ ...p, name: v }))}
-              placeholder={NAME_PLACEHOLDERS[t.key] ?? 'e.g. Resource Name'}
-              required
-            />
-            <Field
-              id={`${t.key}-lat`}
-              label="Latitude"
-              type="number"
-              value={form.latitude}
-              onChange={(v) => setForm(p => ({ ...p, latitude: v }))}
-              placeholder="e.g. 19.1748"
-              required
-            />
-            <Field
-              id={`${t.key}-lng`}
-              label="Longitude"
-              type="number"
-              value={form.longitude}
-              onChange={(v) => setForm(p => ({ ...p, longitude: v }))}
-              placeholder="e.g. 73.0243"
-              required
-            />
-          </div>
-
-          {/* Ambulance count — only for Hospitals & Ambulance Hubs */}
-          {showAmbulanceCount && (
-            <Field
-              id={`${t.key}-ambulance-count`}
-              label="Ambulances"
-              type="number"
-              value={form.ambulanceCount}
-              onChange={(v) => setForm(p => ({ ...p, ambulanceCount: v }))}
-              placeholder="e.g. 12"
-            />
-          )}
-
-          {/* Status select */}
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor={`${t.key}-status`}
-              style={{ fontSize: '9px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}
-            >
-              Status
-            </label>
-            <select
-              id={`${t.key}-status`}
-              value={form.status}
-              onChange={(e) => setForm(p => ({ ...p, status: e.target.value }))}
-              style={{
-                background: '#0d1117',
-                border: '1px solid #30363d',
-                borderRadius: '3px',
-                color: '#e6edf3',
-                fontSize: '11px',
-                padding: '6px 8px',
-                outline: 'none',
-                fontFamily: "'JetBrains Mono', monospace",
-                cursor: 'pointer',
-              }}
-            >
-              {STATUS_OPTIONS.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
+          <TypeFields typeKey={t.key} form={form} setForm={setForm} />
 
           {/* Buttons + feedback */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
-              id={`${t.key}-save`}
               type="submit"
               style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                padding: '6px 16px',
-                borderRadius: '3px',
-                border: `1px solid ${t.color}60`,
-                background: `${t.accent}0.12)`,
-                color: t.color,
-                cursor: 'pointer',
-                transition: 'background 0.15s, border-color 0.15s',
-                fontFamily: 'monospace',
+                fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em',
+                textTransform: 'uppercase', padding: '6px 16px', borderRadius: '3px',
+                border: `1px solid ${t.color}60`, background: `${t.accent}0.12)`,
+                color: t.color, cursor: 'pointer',
+                transition: 'background 0.15s, border-color 0.15s', fontFamily: 'monospace',
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = `${t.accent}0.25)`;
-                e.currentTarget.style.borderColor = `${t.color}90`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = `${t.accent}0.12)`;
-                e.currentTarget.style.borderColor = `${t.color}60`;
-              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = `${t.accent}0.25)`; e.currentTarget.style.borderColor = `${t.color}90`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = `${t.accent}0.12)`; e.currentTarget.style.borderColor = `${t.color}60`; }}
             >
               {isEditing ? '↻ Update' : '+ Save'}
             </button>
 
             {isEditing && (
-              <button
-                type="button"
-                onClick={handleCancel}
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  padding: '6px 12px',
-                  borderRadius: '3px',
-                  border: '1px solid #30363d',
-                  background: 'transparent',
-                  color: '#8b949e',
-                  cursor: 'pointer',
-                  fontFamily: 'monospace',
-                }}
-              >
+              <button type="button" onClick={handleCancel} style={{
+                fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em',
+                textTransform: 'uppercase', padding: '6px 12px', borderRadius: '3px',
+                border: '1px solid #30363d', background: 'transparent',
+                color: '#8b949e', cursor: 'pointer', fontFamily: 'monospace',
+              }}>
                 Cancel
               </button>
             )}
 
             {feedback && (
-              <span
-                style={{
-                  fontSize: '10px',
-                  fontFamily: 'monospace',
-                  color: feedback.ok ? '#3fb950' : '#ef4444',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
+              <span style={{ fontSize: '10px', fontFamily: 'monospace', color: feedback.ok ? '#3fb950' : '#ef4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 {feedback.ok ? '✓' : '✗'} {feedback.msg}
               </span>
             )}
@@ -439,110 +472,43 @@ function ResourceForm({ type, resources, onSave }) {
         {/* Records table */}
         {resources.length > 0 && (
           <div style={{ borderTop: '1px solid #21262d', paddingTop: '12px' }}>
-            <div
-              style={{ fontSize: '9px', color: '#484f58', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}
-            >
+            <div style={{ fontSize: '9px', color: '#484f58', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
               Saved Records
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '180px', overflowY: 'auto' }}>
-              {resources.map((r, idx) => {
-                const displayName =
-                  r.name || r.location || r.hospital_id || r.unit_id || r.ambulance_id;
-
-                const displayId =
-                  r.id || r.hospital_id || r.unit_id || r.ambulance_id;
-
-                const displayMeta =
-                  r.latitude || r.available_beds || r.eta;
-
-                return (
-                  <div
-                    key={displayId}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '6px 8px',
-                      background: editIdx === idx ? `${t.accent}0.08)` : '#0d1117',
-                      border: `1px solid ${editIdx === idx ? t.color + '40' : '#21262d'}`,
-                      borderRadius: '3px',
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        flexShrink: 0,
-                        background:
-                          r.status === 'available'
-                            ? '#3fb950'
-                            : r.status === 'busy'
-                              ? '#f97316'
-                              : '#484f58',
-                      }}
-                    />
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          color: '#e6edf3',
-                          fontWeight: 600,
-                          fontFamily: 'monospace',
-                        }}
-                      >
-                        {displayName}
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: '9px',
-                          color: '#484f58',
-                          fontFamily: 'monospace',
-                        }}
-                      >
-                        {displayId} · {displayMeta} · {r.status}
-                      </div>
+              {resources.map((r, idx) => (
+                <div
+                  key={r.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '6px 8px',
+                    background: editIdx === idx ? `${t.accent}0.08)` : '#0d1117',
+                    border: `1px solid ${editIdx === idx ? t.color + '40' : '#21262d'}`,
+                    borderRadius: '3px', transition: 'background 0.15s',
+                  }}
+                >
+                  <span style={{
+                    width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
+                    background: r.status === 'available' ? '#3fb950' : r.status === 'busy' ? '#f97316' : '#484f58',
+                  }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '11px', color: '#e6edf3', fontWeight: 600, fontFamily: 'monospace' }}>
+                      {r.name}
                     </div>
-
-                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                      <button
-                        onClick={() => handleEdit(idx)}
-                        style={{
-                          fontSize: '9px',
-                          padding: '3px 7px',
-                          borderRadius: '2px',
-                          border: '1px solid #30363d',
-                          background: 'transparent',
-                          color: '#8b949e',
-                          cursor: 'pointer',
-                          fontFamily: 'monospace',
-                        }}
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() => handleDelete(idx)}
-                        style={{
-                          fontSize: '9px',
-                          padding: '3px 7px',
-                          borderRadius: '2px',
-                          border: '1px solid #30363d',
-                          background: 'transparent',
-                          color: '#ef4444',
-                          cursor: 'pointer',
-                          fontFamily: 'monospace',
-                        }}
-                      >
-                        ✕
-                      </button>
+                    <div style={{ fontSize: '9px', color: '#484f58', fontFamily: 'monospace' }}>
+                      {r.id} · {r.latitude != null ? `${r.latitude}, ${r.longitude}` : '—'} · {r.status ?? '—'}
                     </div>
                   </div>
-                );
-              })}
+                  <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                    <button onClick={() => handleEdit(idx)} style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '2px', border: '1px solid #30363d', background: 'transparent', color: '#8b949e', cursor: 'pointer', fontFamily: 'monospace' }}>
+                      Edit
+                    </button>
+                    <button onClick={() => handleDelete(idx)} style={{ fontSize: '9px', padding: '3px 7px', borderRadius: '2px', border: '1px solid #30363d', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontFamily: 'monospace' }}>
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -578,37 +544,24 @@ function ExportPanel({ resources }) {
           {totalCount} total records
         </span>
         <button
-          id="export-copy-btn"
           onClick={handleCopy}
           style={{
-            fontSize: '9px',
-            padding: '3px 8px',
-            borderRadius: '2px',
+            fontSize: '9px', padding: '3px 8px', borderRadius: '2px',
             border: '1px solid #30363d',
             background: copied ? 'rgba(63,185,80,0.12)' : 'transparent',
             color: copied ? '#3fb950' : '#8b949e',
-            cursor: 'pointer',
-            fontFamily: 'monospace',
-            transition: 'all 0.15s',
+            cursor: 'pointer', fontFamily: 'monospace', transition: 'all 0.15s',
           }}
         >
           {copied ? '✓ Copied' : 'Copy JSON'}
         </button>
       </div>
-      <pre
-        style={{
-          margin: 0,
-          padding: '12px 14px',
-          fontSize: '10px',
-          fontFamily: "'JetBrains Mono', monospace",
-          color: '#8b949e',
-          background: '#0d1117',
-          overflowX: 'auto',
-          maxHeight: '260px',
-          overflowY: 'auto',
-          lineHeight: 1.6,
-        }}
-      >
+      <pre style={{
+        margin: 0, padding: '12px 14px', fontSize: '10px',
+        fontFamily: "'JetBrains Mono', monospace", color: '#8b949e',
+        background: '#0d1117', overflowX: 'auto', maxHeight: '260px',
+        overflowY: 'auto', lineHeight: 1.6,
+      }}>
         {json}
       </pre>
     </div>
@@ -620,7 +573,6 @@ export default function ResourceAdmin() {
   const [resources, setResources] = useState(loadResources);
   const [activeTab, setActiveTab] = useState('hospitals');
 
-  // Persist to localStorage whenever resources change
   useEffect(() => {
     const fetchResources = async () => {
       try {
@@ -632,27 +584,18 @@ export default function ResourceAdmin() {
         console.error("Failed to load resources:", error);
       }
     };
-
     fetchResources();
   }, []);
 
   const handleSave = (key, updated) => {
-    const newResources = {
-      ...resources,
-      [key]: updated
-    };
-
-    console.log("Saving:", newResources);
-
+    const newResources = { ...resources, [key]: updated };
     setResources(newResources);
     localStorage.setItem("roadsos_resources", JSON.stringify(newResources));
 
     fetch("http://127.0.0.1:8000/api/v1/save-resources", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(newResources)
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newResources),
     })
       .then(res => res.json())
       .then(data => console.log("Backend response:", data))
@@ -663,24 +606,13 @@ export default function ResourceAdmin() {
   const totalRecords = Object.values(resources).reduce((s, a) => s + a.length, 0);
 
   return (
-    <div
-      className="h-full overflow-y-auto"
-      style={{ background: '#0d1117', padding: '0' }}
-    >
+    <div className="h-full overflow-y-auto" style={{ background: '#0d1117', padding: '0' }}>
       {/* Sticky header */}
-      <div
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-          background: '#0d1117',
-          borderBottom: '1px solid #21262d',
-          padding: '12px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-        }}
-      >
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 10, background: '#0d1117',
+        borderBottom: '1px solid #21262d', padding: '12px 24px',
+        display: 'flex', alignItems: 'center', gap: '12px',
+      }}>
         <div>
           <div style={{ fontSize: '13px', fontWeight: 700, color: '#e6edf3', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
             Resource Manager
@@ -689,18 +621,11 @@ export default function ResourceAdmin() {
             Define locations → saved to resources.json schema
           </div>
         </div>
-        <div
-          style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'rgba(63,185,80,0.08)',
-            border: '1px solid rgba(63,185,80,0.25)',
-            borderRadius: '3px',
-            padding: '4px 10px',
-          }}
-        >
+        <div style={{
+          marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px',
+          background: 'rgba(63,185,80,0.08)', border: '1px solid rgba(63,185,80,0.25)',
+          borderRadius: '3px', padding: '4px 10px',
+        }}>
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3fb950', display: 'inline-block' }} />
           <span style={{ fontSize: '10px', fontFamily: 'monospace', color: '#3fb950', fontWeight: 600 }}>
             {totalRecords} RESOURCES DEFINED
@@ -712,37 +637,20 @@ export default function ResourceAdmin() {
         {/* Left: tab nav + form */}
         <div style={{ flex: '0 0 420px', minWidth: 0 }}>
           {/* Tab bar */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '4px',
-              marginBottom: '14px',
-              background: '#161b22',
-              border: '1px solid #21262d',
-              borderRadius: '4px',
-              padding: '4px',
-              flexWrap: 'wrap',
-            }}
-          >
+          <div style={{
+            display: 'flex', gap: '4px', marginBottom: '14px',
+            background: '#161b22', border: '1px solid #21262d',
+            borderRadius: '4px', padding: '4px', flexWrap: 'wrap',
+          }}>
             {RESOURCE_TYPES.map(t => (
               <button
                 key={t.key}
-                id={`tab-${t.key}`}
                 onClick={() => setActiveTab(t.key)}
                 style={{
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  padding: '5px 10px',
-                  borderRadius: '3px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  fontFamily: 'monospace',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
+                  fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em',
+                  textTransform: 'uppercase', padding: '5px 10px', borderRadius: '3px',
+                  border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                  fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: '4px',
                   background: activeTab === t.key ? `${t.accent}0.15)` : 'transparent',
                   color: activeTab === t.key ? t.color : '#484f58',
                   boxShadow: activeTab === t.key ? `inset 0 0 0 1px ${t.color}40` : 'none',
@@ -750,24 +658,17 @@ export default function ResourceAdmin() {
               >
                 <span style={{ fontSize: '11px' }}>{t.icon}</span>
                 {t.label}
-                <span
-                  style={{
-                    background: `${t.accent}0.2)`,
-                    color: t.color,
-                    borderRadius: '2px',
-                    padding: '0 4px',
-                    fontSize: '8px',
-                    minWidth: '14px',
-                    textAlign: 'center',
-                  }}
-                >
+                <span style={{
+                  background: `${t.accent}0.2)`, color: t.color,
+                  borderRadius: '2px', padding: '0 4px', fontSize: '8px',
+                  minWidth: '14px', textAlign: 'center',
+                }}>
                   {resources[t.key]?.length ?? 0}
                 </span>
               </button>
             ))}
           </div>
 
-          {/* Active form */}
           {activeType && (
             <ResourceForm
               type={activeType}
@@ -777,7 +678,7 @@ export default function ResourceAdmin() {
           )}
         </div>
 
-        {/* Right: JSON export preview */}
+        {/* Right: JSON export preview + summary */}
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <ExportPanel resources={resources} />
 
@@ -793,44 +694,31 @@ export default function ResourceAdmin() {
                   style={{
                     background: activeTab === t.key ? `${t.accent}0.08)` : '#161b22',
                     border: `1px solid ${activeTab === t.key ? t.color + '40' : '#21262d'}`,
-                    borderRadius: '4px',
-                    padding: '10px 12px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
+                    borderRadius: '4px', padding: '10px 12px', cursor: 'pointer', transition: 'all 0.15s',
                   }}
                 >
                   <div style={{ fontSize: '18px', marginBottom: '6px' }}>{t.icon}</div>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: t.color, fontFamily: 'monospace', lineHeight: 1 }}>
-                    {count}
-                  </div>
-                  <div style={{ fontSize: '8px', color: '#484f58', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '3px' }}>
-                    {t.label}
-                  </div>
-                  <div style={{ fontSize: '8px', color: '#3fb950', fontFamily: 'monospace', marginTop: '2px' }}>
-                    {available} avail
-                  </div>
+                  <div style={{ fontSize: '20px', fontWeight: 700, color: t.color, fontFamily: 'monospace', lineHeight: 1 }}>{count}</div>
+                  <div style={{ fontSize: '8px', color: '#484f58', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '3px' }}>{t.label}</div>
+                  <div style={{ fontSize: '8px', color: '#3fb950', fontFamily: 'monospace', marginTop: '2px' }}>{available} avail</div>
                 </div>
               );
             })}
           </div>
 
           {/* Instructions card */}
-          <div
-            style={{
-              background: 'rgba(88,166,255,0.04)',
-              border: '1px solid rgba(88,166,255,0.2)',
-              borderRadius: '4px',
-              padding: '12px 14px',
-            }}
-          >
+          <div style={{
+            background: 'rgba(88,166,255,0.04)', border: '1px solid rgba(88,166,255,0.2)',
+            borderRadius: '4px', padding: '12px 14px',
+          }}>
             <div style={{ fontSize: '9px', color: '#58a6ff', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, marginBottom: '8px' }}>
               ℹ How It Works
             </div>
             <ul style={{ fontSize: '10px', color: '#8b949e', fontFamily: 'monospace', lineHeight: 1.8, margin: 0, paddingLeft: '14px' }}>
               <li>Fill the form and click <strong style={{ color: '#e6edf3' }}>+ Save</strong> to add a resource entry</li>
-              <li>All entries persist in <code style={{ color: '#58a6ff' }}>localStorage</code> matching the <code style={{ color: '#58a6ff' }}>resources.json</code> schema</li>
-              <li>Click <strong style={{ color: '#e6edf3' }}>Copy JSON</strong> to export and paste into <code style={{ color: '#58a6ff' }}>frontend/src/data/resources.json</code></li>
-              <li>The User Portal reads from <code style={{ color: '#58a6ff' }}>GET /api/v1/resources</code> and displays live map markers</li>
+              <li>All resource types now store <strong style={{ color: '#e6edf3' }}>lat/lng coordinates</strong> for live map plotting</li>
+              <li>Hospitals and police include operational scoring fields for dispatch agents</li>
+              <li>The User Tactical Map reads from <code style={{ color: '#58a6ff' }}>GET /api/v1/resources</code> and plots live markers</li>
             </ul>
           </div>
         </div>

@@ -1,38 +1,53 @@
 {
-  "hospitals": [],
+  "hospitals": [
+    {
+      "id": "HOSP_001",
+      "name": "Fortis",
+      "latitude": 18,
+      "longitude": 73,
+      "available_beds": 80,
+      "icu_readiness": 55,
+      "trauma_score": 58,
+      "status": "available"
+    }
+  ],
   "police": [
     {
-      "id": "pol_001",
-      "name": "pol_001",
-      "latitude": 5,
-      "longitude": 95,
+      "id": "POL_001",
+      "name": "Test",
+      "latitude": 19.2,
+      "longitude": 72.8777,
+      "eta": 4,
+      "clearance_capacity": 5,
       "status": "available"
     }
   ],
   "ambulances": [
     {
-      "id": "amb_001",
-      "name": "test",
-      "latitude": 89,
-      "longitude": 67,
+      "id": "AMB_001",
+      "name": "Test",
+      "latitude": 20,
+      "longitude": 72,
+      "eta": 10,
+      "equipment_score": 75,
       "status": "available"
     }
   ],
   "repair_shops": [
     {
-      "id": "RS002",
-      "name": "Metro Auto",
-      "latitude": 43,
-      "longitude": 32,
+      "id": "RS_001",
+      "name": "Test",
+      "latitude": 19.12,
+      "longitude": 72.9,
       "status": "available"
     }
   ],
   "tow_services": [
     {
-      "id": "tow_001",
-      "name": "test",
-      "latitude": 89,
-      "longitude": 98,
+      "id": "TS_001",
+      "name": "Test",
+      "latitude": 19.05,
+      "longitude": 72.84,
       "status": "available"
     }
   ]

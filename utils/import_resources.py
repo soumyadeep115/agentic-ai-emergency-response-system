@@ -19,59 +19,58 @@ def import_resources():
         print("Importing hospitals...")
         for h in data.get("hospitals", []):
             print(h)
-
-            hospital_id = h.get("id") or h.get("hospital_id")
-
             cursor.execute("""
                 INSERT INTO hospitals
-                (hospital_id, available_beds, icu_readiness, trauma_score)
-                VALUES (%s, %s, %s, %s)
+                (hospital_id, name, available_beds, icu_readiness, trauma_score, latitude, longitude)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
-                hospital_id,
+                h.get("id"),
+                h.get("name"),
                 h.get("available_beds", 80),
                 h.get("icu_readiness", 90),
-                h.get("trauma_score", 85)
+                h.get("trauma_score", 85),
+                h.get("latitude"),
+                h.get("longitude")
             ))
 
         print("Importing police...")
         for p in data.get("police", []):
             print(p)
-
-            unit_id = p.get("id") or p.get("unit_id")
-
             cursor.execute("""
                 INSERT INTO police_units
-                (unit_id, eta, clearance_capacity, status)
-                VALUES (%s, %s, %s, %s)
+                (unit_id, name, eta, clearance_capacity, status, latitude, longitude)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
-                unit_id,
+                p.get("id"),
+                p.get("name"),
                 p.get("eta", 5),
                 p.get("clearance_capacity", 95),
-                p.get("status", "available")
+                p.get("status", "available"),
+                p.get("latitude"),
+                p.get("longitude")
             ))
 
         print("Importing ambulances...")
         for a in data.get("ambulances", []):
             print(a)
-
-            ambulance_id = a.get("id") or a.get("ambulance_id")
-
             cursor.execute("""
                 INSERT INTO ambulances
-                (ambulance_id, eta, equipment_score, status, location)
-                VALUES (%s, %s, %s, %s, %s)
+                (ambulance_id, name, eta, equipment_score, status, location, latitude, longitude)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (
-                ambulance_id,
+                a.get("id"),
+                a.get("name"),
                 a.get("eta", 4),
                 a.get("equipment_score", 90),
                 a.get("status", "available"),
-                a.get("location", a.get("name", "Station_A"))
+                a.get("name", "Station_A"),   # location kept as text for NetworkX fallback
+                a.get("latitude"),
+                a.get("longitude")
             ))
 
         print("Importing repair shops...")
         for shop in data.get("repair_shops", []):
             print(shop)
-
             cursor.execute("""
                 INSERT INTO repair_shops
                 (id, name, latitude, longitude, status)
@@ -87,7 +86,6 @@ def import_resources():
         print("Importing tow services...")
         for tow in data.get("tow_services", []):
             print(tow)
-
             cursor.execute("""
                 INSERT INTO tow_services
                 (id, name, latitude, longitude, status)
