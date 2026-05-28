@@ -46,7 +46,19 @@ const RESOURCE_TYPES = [
 
 const STATUS_OPTIONS = ['available', 'busy', 'offline'];
 
-const EMPTY_ENTRY = { id: '', name: '', latitude: '', longitude: '', status: 'available' };
+// ── Per-tab NAME placeholder text ────────────────────────────────────────────
+const NAME_PLACEHOLDERS = {
+  hospitals:    'e.g. Fortis Mulund',
+  police:       'e.g. Mumbai Police HQ',
+  ambulances:   'e.g. Central Ambulance Hub',
+  repair_shops: 'e.g. Quick Auto Repair',
+  tow_services: 'e.g. Express Towing Mumbai',
+};
+
+// Types that expose the ambulance-count field
+const SHOWS_AMBULANCE_COUNT = new Set(['hospitals', 'ambulances']);
+
+const EMPTY_ENTRY = { id: '', name: '', latitude: '', longitude: '', status: 'available', ambulanceCount: '' };
 
 // ── Persists resources to localStorage (mirrors resources.json schema) ────────
 const LS_KEY = 'roadsos_resources';
@@ -99,6 +111,7 @@ function Field({ id, label, type = 'text', value, onChange, placeholder, require
 // ── Resource form panel ───────────────────────────────────────────────────────
 function ResourceForm({ type, resources, onSave }) {
   const [form, setForm] = useState({ ...EMPTY_ENTRY });
+  const showAmbulanceCount = SHOWS_AMBULANCE_COUNT.has(type.key);
   const [editIdx, setEditIdx] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
@@ -288,7 +301,7 @@ function ResourceForm({ type, resources, onSave }) {
               label="Name"
               value={form.name}
               onChange={(v) => setForm(p => ({ ...p, name: v }))}
-              placeholder="e.g. Fortis Mulund"
+              placeholder={NAME_PLACEHOLDERS[t.key] ?? 'e.g. Resource Name'}
               required
             />
             <Field
@@ -310,6 +323,18 @@ function ResourceForm({ type, resources, onSave }) {
               required
             />
           </div>
+
+          {/* Ambulance count — only for Hospitals & Ambulance Hubs */}
+          {showAmbulanceCount && (
+            <Field
+              id={`${t.key}-ambulance-count`}
+              label="Ambulances"
+              type="number"
+              value={form.ambulanceCount}
+              onChange={(v) => setForm(p => ({ ...p, ambulanceCount: v }))}
+              placeholder="e.g. 12"
+            />
+          )}
 
           {/* Status select */}
           <div className="flex flex-col gap-1">
