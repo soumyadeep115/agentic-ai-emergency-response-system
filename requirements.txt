@@ -5,3 +5,8 @@ networkx
 mysql-connector-python
 python-dotenv
 pydantic
+
+requests
+python-multipart
+aiofiles
+httpx

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LocationPicker from '../components/LocationPicker';
 
 // ── Resource type config ─────────────────────────────────────────────────────
 const RESOURCE_TYPES = [
@@ -116,19 +117,39 @@ function Field({ id, label, type = 'text', value, onChange, placeholder, require
 }
 
 // ── Per-type form fields renderer ─────────────────────────────────────────────
-function TypeFields({ typeKey, form, setForm }) {
+function TypeFields({ typeKey, form, setForm, locationMethod }) {
   const f = (field) => (v) => setForm(p => ({ ...p, [field]: v }));
 
   if (typeKey === 'hospitals') {
     return (
       <>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <Field id="h-id"    label="ID"        value={form.id}        onChange={f('id')}        placeholder="e.g. HOSP_001" required />
-          <Field id="h-name"  label="Name"      value={form.name}      onChange={f('name')}      placeholder="e.g. Fortis Mulund" required />
-          <Field id="h-lat"   label="Latitude"  value={form.latitude}  onChange={f('latitude')}  placeholder="e.g. 19.1748" type="number" required />
-          <Field id="h-lng"   label="Longitude" value={form.longitude} onChange={f('longitude')} placeholder="e.g. 73.0243" type="number" required />
-          <Field id="h-beds"  label="Available Beds"  value={form.available_beds}  onChange={f('available_beds')}  placeholder="e.g. 80"  type="number" required />
-          <Field id="h-icu"   label="ICU Readiness"   value={form.icu_readiness}   onChange={f('icu_readiness')}   placeholder="e.g. 90"  type="number" required />
+          <Field id="h-id" label="ID" value={form.id} onChange={f('id')} placeholder="e.g. HOSP_001" required />
+          <Field id="h-name" label="Name" value={form.name} onChange={f('name')} placeholder="e.g. Fortis Mulund" required />
+          {locationMethod === "manual" && (
+            <>
+              <Field
+                id="h-lat"
+                label="Latitude"
+                value={form.latitude}
+                onChange={f('latitude')}
+                placeholder="e.g. 19.1748"
+                type="number"
+                required
+              />
+              <Field
+                id="h-lng"
+                label="Longitude"
+                value={form.longitude}
+                onChange={f('longitude')}
+                placeholder="e.g. 73.0243"
+                type="number"
+                required
+              />
+            </>
+          )}
+          <Field id="h-beds" label="Available Beds" value={form.available_beds} onChange={f('available_beds')} placeholder="e.g. 80" type="number" required />
+          <Field id="h-icu" label="ICU Readiness" value={form.icu_readiness} onChange={f('icu_readiness')} placeholder="e.g. 90" type="number" required />
         </div>
         <Field id="h-trauma" label="Trauma Score" value={form.trauma_score} onChange={f('trauma_score')} placeholder="e.g. 85" type="number" required />
       </>
@@ -139,12 +160,32 @@ function TypeFields({ typeKey, form, setForm }) {
     return (
       <>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <Field id="p-id"   label="ID"        value={form.id}        onChange={f('id')}        placeholder="e.g. POL_001" required />
-          <Field id="p-name" label="Name"      value={form.name}      onChange={f('name')}      placeholder="e.g. Mumbai Police HQ" required />
-          <Field id="p-lat"  label="Latitude"  value={form.latitude}  onChange={f('latitude')}  placeholder="e.g. 19.0760" type="number" required />
-          <Field id="p-lng"  label="Longitude" value={form.longitude} onChange={f('longitude')} placeholder="e.g. 72.8777" type="number" required />
-          <Field id="p-eta"  label="ETA (min)" value={form.eta}       onChange={f('eta')}       placeholder="e.g. 5"       type="number" required />
-          <Field id="p-cap"  label="Clearance Capacity" value={form.clearance_capacity} onChange={f('clearance_capacity')} placeholder="e.g. 95" type="number" required />
+          <Field id="p-id" label="ID" value={form.id} onChange={f('id')} placeholder="e.g. POL_001" required />
+          <Field id="p-name" label="Name" value={form.name} onChange={f('name')} placeholder="e.g. Mumbai Police HQ" required />
+          {locationMethod === "manual" && (
+            <>
+              <Field
+                id="p-lat"
+                label="Latitude"
+                value={form.latitude}
+                onChange={f('latitude')}
+                placeholder="e.g. 19.0760"
+                type="number"
+                required
+              />
+              <Field
+                id="p-lng"
+                label="Longitude"
+                value={form.longitude}
+                onChange={f('longitude')}
+                placeholder="e.g. 72.8777"
+                type="number"
+                required
+              />
+            </>
+          )}
+          <Field id="p-eta" label="ETA (min)" value={form.eta} onChange={f('eta')} placeholder="e.g. 5" type="number" required />
+          <Field id="p-cap" label="Clearance Capacity" value={form.clearance_capacity} onChange={f('clearance_capacity')} placeholder="e.g. 95" type="number" required />
         </div>
         <div className="flex flex-col gap-1">
           <label style={{ fontSize: '9px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
@@ -170,12 +211,32 @@ function TypeFields({ typeKey, form, setForm }) {
     return (
       <>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <Field id="a-id"    label="ID"              value={form.id}             onChange={f('id')}             placeholder="e.g. AMB_001"           required />
-          <Field id="a-name"  label="Hub Name"        value={form.name}           onChange={f('name')}           placeholder="e.g. Central Ambulance" required />
-          <Field id="a-lat"   label="Latitude"        value={form.latitude}       onChange={f('latitude')}       placeholder="e.g. 19.0760"           type="number" required />
-          <Field id="a-lng"   label="Longitude"       value={form.longitude}      onChange={f('longitude')}      placeholder="e.g. 72.8777"           type="number" required />
-          <Field id="a-eta"   label="ETA (min)"       value={form.eta}            onChange={f('eta')}            placeholder="e.g. 4"                 type="number" required />
-          <Field id="a-equip" label="Equipment Score" value={form.equipment_score} onChange={f('equipment_score')} placeholder="e.g. 90"               type="number" required />
+          <Field id="a-id" label="ID" value={form.id} onChange={f('id')} placeholder="e.g. AMB_001" required />
+          <Field id="a-name" label="Hub Name" value={form.name} onChange={f('name')} placeholder="e.g. Central Ambulance" required />
+          {locationMethod === "manual" && (
+            <>
+              <Field
+                id="a-lat"
+                label="Latitude"
+                value={form.latitude}
+                onChange={f('latitude')}
+                placeholder="e.g. 19.0760"
+                type="number"
+                required
+              />
+              <Field
+                id="a-lng"
+                label="Longitude"
+                value={form.longitude}
+                onChange={f('longitude')}
+                placeholder="e.g. 72.8777"
+                type="number"
+                required
+              />
+            </>
+          )}
+          <Field id="a-eta" label="ETA (min)" value={form.eta} onChange={f('eta')} placeholder="e.g. 4" type="number" required />
+          <Field id="a-equip" label="Equipment Score" value={form.equipment_score} onChange={f('equipment_score')} placeholder="e.g. 90" type="number" required />
         </div>
         <div className="flex flex-col gap-1">
           <label style={{ fontSize: '9px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
@@ -201,10 +262,30 @@ function TypeFields({ typeKey, form, setForm }) {
   return (
     <>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-        <Field id={`${typeKey}-id`}   label="ID"        value={form.id}        onChange={f('id')}        placeholder="e.g. RS_001"    required />
-        <Field id={`${typeKey}-name`} label="Name"      value={form.name}      onChange={f('name')}      placeholder="e.g. Quick Auto" required />
-        <Field id={`${typeKey}-lat`}  label="Latitude"  value={form.latitude}  onChange={f('latitude')}  placeholder="e.g. 19.1748"   type="number" required />
-        <Field id={`${typeKey}-lng`}  label="Longitude" value={form.longitude} onChange={f('longitude')} placeholder="e.g. 73.0243"   type="number" required />
+        <Field id={`${typeKey}-id`} label="ID" value={form.id} onChange={f('id')} placeholder="e.g. RS_001" required />
+        <Field id={`${typeKey}-name`} label="Name" value={form.name} onChange={f('name')} placeholder="e.g. Quick Auto" required />
+        {locationMethod === "manual" && (
+          <>
+            <Field
+              id={`${typeKey}-lat`}
+              label="Latitude"
+              value={form.latitude}
+              onChange={f('latitude')}
+              placeholder="e.g. 19.1748"
+              type="number"
+              required
+            />
+            <Field
+              id={`${typeKey}-lng`}
+              label="Longitude"
+              value={form.longitude}
+              onChange={f('longitude')}
+              placeholder="e.g. 73.0243"
+              type="number"
+              required
+            />
+          </>
+        )}
       </div>
       <div className="flex flex-col gap-1">
         <label style={{ fontSize: '9px', color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
@@ -346,17 +427,75 @@ function validateForm(typeKey, form) {
   return null;
 }
 
+// Location input :
+
+function LocationInput({ form, setForm, locationMethod, setLocationMethod }) {
+  const updateCoords = (lat, lng) => {
+    setForm(prev => ({
+      ...prev,
+      latitude: lat.toFixed(6),
+      longitude: lng.toFixed(6)
+    }));
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div>
+        <label
+          style={{
+            fontSize: "9px",
+            color: "#8b949e",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            fontWeight: 600
+          }}
+        >
+          Location Input Method
+        </label>
+
+        <div style={{ display: "flex", gap: "18px", marginTop: "8px" }}>
+          <label style={{ color: "#e6edf3", fontSize: "11px" }}>
+            <input
+              type="radio"
+              checked={locationMethod === "manual"}
+              onChange={() => setLocationMethod("manual")}
+            /> Enter Coordinates
+          </label>
+
+          <label style={{ color: "#e6edf3", fontSize: "11px" }}>
+            <input
+              type="radio"
+              checked={locationMethod === "map"}
+              onChange={() => setLocationMethod("map")}
+            /> Pick on Map
+          </label>
+        </div>
+      </div>
+
+      {locationMethod === "map" && (
+        <LocationPicker
+          latitude={form.latitude}
+          longitude={form.longitude}
+          onLocationSelect={updateCoords}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Resource form panel ───────────────────────────────────────────────────────
 function ResourceForm({ type, resources, onSave }) {
   const [form, setForm] = useState({ ...EMPTY_ENTRIES[type.key] });
   const [editIdx, setEditIdx] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [locationMethod, setLocationMethod] = useState("manual");
 
   // Reset form when tab changes
   useEffect(() => {
     setForm({ ...EMPTY_ENTRIES[type.key] });
     setEditIdx(null);
     setFeedback(null);
+    setLocationMethod("manual");
   }, [type.key]);
 
   const flash = (msg, ok = true) => {
@@ -431,7 +570,19 @@ function ResourceForm({ type, resources, onSave }) {
 
       <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <TypeFields typeKey={t.key} form={form} setForm={setForm} />
+          <LocationInput
+            form={form}
+            setForm={setForm}
+            locationMethod={locationMethod}
+            setLocationMethod={setLocationMethod}
+          />
+
+          <TypeFields
+            typeKey={t.key}
+            form={form}
+            setForm={setForm}
+            locationMethod={locationMethod}
+          />
 
           {/* Buttons + feedback */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

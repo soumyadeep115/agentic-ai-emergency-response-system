@@ -31,6 +31,10 @@ class IncidentRequest(BaseModel):
 @app.post("/dispatch")
 def dispatch_incident(request: IncidentRequest):
 
+    print("DISPATCH REQUEST")
+    print("lat:", request.incident_lat)
+    print("lng:", request.incident_lng)
+
     initial_state = {
         "incident_type":     request.incident_type,
         "casualties":        request.casualties,

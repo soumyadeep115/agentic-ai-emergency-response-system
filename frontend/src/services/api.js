@@ -153,9 +153,11 @@ export async function postDispatchTrigger(payload = {}) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      incident_type:     payload.incident_type     ?? 'road_accident',
-      casualties:        payload.casualties         ?? 3,
+      incident_type: payload.incident_type ?? 'road_accident',
+      casualties: payload.casualties ?? 3,
       incident_location: payload.incident_location ?? 'Incident_B',
+      incident_lat: payload.incident_lat ?? null,
+      incident_lng: payload.incident_lng ?? null
     }),
   });
 }

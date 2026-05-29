@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import TacticalMap from '../components/TacticalMap.jsx';
 import {
   postDispatchTrigger,
   getMapState,
-  createDispatchStream,
   NODE_COORDS,
   parseRouteNodes,
   parseHospitalId,
-  buildDispatchAgentEvents,
   DEFAULT_EMS_STATIONS,
 } from '../services/api.js';
 import { buildRouteGeometries } from '../services/osrm.js';
@@ -17,200 +15,114 @@ import { buildRouteGeometries } from '../services/osrm.js';
 // ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_MAP_STATE = {
   ems_stations: DEFAULT_EMS_STATIONS,
-  crash_sites:  [],
-  hospital:     null,
-  routes:       [],
+  crash_sites: [],
+  hospital: null,
+  routes: [],
 };
 
 const TYPE_COLOR = { info: '#58a6ff', warn: '#d29922', ok: '#3fb950', done: '#39d3c3' };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TelemetryPanel
+// Main View
 // ─────────────────────────────────────────────────────────────────────────────
-function TelemetryPanel({ telem, simActive }) {
-  if (!telem) {
-    return (
-      <div className="panel flex flex-col flex-shrink-0">
-        <div className="panel-header">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#484f58" strokeWidth="2">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-          </svg>
-          <span className="label-xs">MPU-6050 Telemetry</span>
-          <span className="ml-auto text-[9px] font-mono text-muted">OFFLINE</span>
-        </div>
-        <div className="p-4 flex flex-col items-center gap-2">
-          <span className="dot-muted"></span>
-          <div className="text-[10px] font-mono text-muted text-center leading-relaxed">
-            Awaiting MPU-6050 sensor feed<br />via WS /api/v1/dispatch/stream
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  const spike = telem.gForceX > 2.0;
-  const rows = [
-    { label: 'Node ID',     val: telem.nodeId,                              color: 'text-secondary' },
-    { label: 'Location',    val: telem.location,                            color: 'text-secondary' },
-    { label: 'Status',      val: telem.status,                              color: spike ? 'text-accent-red' : 'text-accent-green', bold: spike },
-    { label: 'G-Force X',   val: `${Number(telem.gForceX).toFixed(2)} g`,  color: spike ? 'text-accent-red' : 'text-primary', bold: spike },
-    { label: 'G-Force Y',   val: `${Number(telem.gForceY).toFixed(2)} g`,  color: 'text-primary' },
-    { label: 'G-Force Z',   val: `${Number(telem.gForceZ).toFixed(2)} g`,  color: 'text-primary' },
-    { label: 'Roll Angle',  val: `${Number(telem.rollDeg).toFixed(1)}°`,   color: spike ? 'text-accent-orange' : 'text-primary' },
-    { label: 'Pitch Angle', val: `${Number(telem.pitchDeg).toFixed(1)}°`,  color: 'text-primary' },
-    { label: 'Temp',        val: `${Number(telem.tempC).toFixed(1)} °C`,   color: 'text-primary' },
-    { label: 'Timestamp',   val: String(telem.timestamp).slice(0, 22) + 'Z', color: 'text-muted' },
-  ];
-
+function IncidentControlPanel({
+  incidentLat,
+  setIncidentLat,
+  incidentLng,
+  setIncidentLng,
+  locationMode,
+  setLocationMode,
+  onDispatch,
+  simActive,
+  lastResult
+}) {
   return (
-    <div className="panel flex flex-col flex-shrink-0">
+    <div className="w-72 flex-shrink-0 flex flex-col border-r border-border bg-[#0d1117]">
       <div className="panel-header">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#484f58" strokeWidth="2">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-        </svg>
-        <span className="label-xs">MPU-6050 Telemetry</span>
-        {spike && <span className="ml-auto badge-critical animate-pulse-slow">SPIKE</span>}
+        <span className="label-xs">Incident Simulator</span>
+        <span className="ml-auto text-[9px] font-mono text-accent-red">
+          LIVE DISPATCH
+        </span>
       </div>
-      <div className="overflow-y-auto">
-        {rows.map(({ label, val, color, bold }) => (
-          <div key={label} className="telem-row">
-            <span className="label-xs">{label}</span>
-            <span className={`font-mono text-[11px] tabular-nums ${color} ${bold ? 'font-bold' : ''}`}>{val}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AgentStream
-// ─────────────────────────────────────────────────────────────────────────────
-function AgentStream({ events, wsStatus, simActive }) {
-  const bottomRef = useRef(null);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [events]);
+      <div className="p-4 flex flex-col gap-4">
 
-  const [dotCls, textCls, label] = wsStatus === 'open'
-    ? ['dot-green animate-pulse', 'text-accent-green', 'WS LIVE']
-    : wsStatus === 'connecting'
-      ? ['dot-amber animate-pulse', 'text-accent-amber', 'CONNECTING']
-      : simActive
-        ? ['dot-red animate-pulse', 'text-accent-red', 'SIMULATING']
-        : ['dot-muted', 'text-muted', 'CACHED'];
+        <div className="flex gap-4">
+          <label className="text-[11px] text-primary">
+            <input
+              type="radio"
+              checked={locationMode === "manual"}
+              onChange={() => setLocationMode("manual")}
+            /> Coordinates
+          </label>
 
-  return (
-    <div className="panel flex flex-col" style={{ height: '280px', maxHeight: '280px' }}>
-      <div className="panel-header">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#484f58" strokeWidth="2">
-          <polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" />
-        </svg>
-        <span className="label-xs">Agent Negotiation Stream</span>
-        <div className="ml-auto flex items-center gap-1.5">
-          <span className={dotCls}></span>
-          <span className={`text-[9px] font-mono ${textCls}`}>{label}</span>
+          <label className="text-[11px] text-primary">
+            <input
+              type="radio"
+              checked={locationMode === "map"}
+              onChange={() => setLocationMode("map")}
+            /> Pick Map
+          </label>
         </div>
-      </div>
-      <div className="overflow-y-auto p-2 bg-base/30 space-y-1" style={{ flex: '1 1 0', minHeight: 0 }}>
-        {events.map((ev, i) => (
-          <div key={i} className="font-mono p-1.5 rounded bg-[#0d1117]/40 border border-[#21262d]/30 shrink-0">
-            <div className="flex items-baseline gap-2 mb-0.5">
-              <span className="text-[9px] text-muted tabular-nums shrink-0">[{ev.ts}]</span>
-              <span className="text-[10px] font-bold truncate" style={{ color: TYPE_COLOR[ev.type] ?? '#8b949e' }}>{ev.agent}</span>
-            </div>
-            <div className="text-[11px] leading-snug text-[#c9d1d9] break-words">&gt;&gt; {ev.msg}</div>
-          </div>
-        ))}
-        {simActive && (
-          <div className="font-mono p-1.5 rounded bg-[#0d1117]/40 border border-[#21262d]/30 shrink-0">
-            <div className="flex items-baseline gap-2 mb-0.5">
-              <span className="text-[9px] text-muted tabular-nums">[...]</span>
-              <span className="text-[10px] font-bold text-accent-green">SYSTEM</span>
-            </div>
-            <div className="text-[11px] text-[#c9d1d9]">&gt;&gt; <span className="animate-blink">█</span></div>
+
+        {locationMode === "manual" && (
+          <>
+            <input
+              value={incidentLat}
+              onChange={(e) => setIncidentLat(e.target.value)}
+              placeholder="Latitude"
+              className="bg-[#161b22] border border-[#30363d] p-2 text-[11px]"
+            />
+
+            <input
+              value={incidentLng}
+              onChange={(e) => setIncidentLng(e.target.value)}
+              placeholder="Longitude"
+              className="bg-[#161b22] border border-[#30363d] p-2 text-[11px]"
+            />
+          </>
+        )}
+
+        {locationMode === "map" && (
+          <div className="text-[10px] font-mono text-accent-cyan">
+            Click tactical map to select incident
           </div>
         )}
-        <div ref={bottomRef} />
-      </div>
-    </div>
-  );
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SimulatorPanel
-// ─────────────────────────────────────────────────────────────────────────────
-function SimulatorPanel({ onSimulate, simActive, lastResult, routeSource }) {
-  return (
-    <div className="absolute bottom-4 right-4 panel shadow-2xl z-[500]" style={{ width: '272px' }}>
-      <div className="panel-header">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#484f58" strokeWidth="2">
-          <polygon points="5 3 19 12 5 21 5 3" />
-        </svg>
-        <span className="label-xs">Simulator Utility</span>
-        <span className="ml-auto text-[9px] font-mono text-muted">DEV CTRL</span>
-      </div>
-      <div className="p-3 space-y-2.5">
-        <p className="text-[10px] text-secondary font-mono leading-snug">
-          Fires <span className="text-accent-blue">POST /dispatch</span> — triggers full LangGraph pipeline + OSRM road routing.
-        </p>
-        <div className="grid grid-cols-2 gap-1.5 text-[9px] font-mono bg-base/60 border border-border rounded-[3px] p-2">
-          {[
-            ['incident_type', 'road_accident'],
-            ['casualties',    '3'],
-            ['incident_location', 'Incident_B'],
-            ['severity',      '→ AUTO'],
-          ].map(([k, v]) => (
-            <div key={k} className="flex flex-col gap-0.5">
-              <span className="text-muted uppercase">{k}</span>
-              <span className="text-accent-cyan">{v}</span>
-            </div>
-          ))}
+        <div className="text-[10px] font-mono text-secondary">
+          Selected: {incidentLat || "--"}, {incidentLng || "--"}
         </div>
 
         {lastResult && (
-          <div className={`text-[9px] font-mono px-2 py-1 rounded-[2px] border ${
-            lastResult.ok
-              ? 'text-accent-green bg-green-500/5 border-green-500/20'
-              : 'text-accent-orange bg-orange-500/5 border-orange-500/20'
-          }`}>
-            {lastResult.ok
-              ? `✓ Dispatch via API · route=${routeSource ?? '—'}`
-              : `⚠ ${lastResult.msg} (mock fallback)`}
+          <div className="text-[10px] font-mono text-accent-green">
+            {lastResult.msg}
           </div>
         )}
 
         <button
-          id="btn-simulate-crash"
-          onClick={onSimulate}
+          onClick={onDispatch}
           disabled={simActive}
-          className={`w-full btn-danger ${simActive ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className="btn-danger"
         >
-          {simActive ? '⚡ SIMULATING...' : '⚡ SIMULATE CRASH EVENT'}
+          {simActive ? "DISPATCHING..." : "DISPATCH INCIDENT"}
         </button>
-
-        {simActive && (
-          <div className="text-[9px] font-mono text-accent-orange animate-pulse-slow text-center">
-            POST /dispatch → OSRM road geometry…
-          </div>
-        )}
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main View
-// ─────────────────────────────────────────────────────────────────────────────
 export default function LiveTacticalMap() {
-  const [simActive,      setSimActive]      = useState(false);
-  const [lastResult,     setLastResult]     = useState(null);
+  const [simActive, setSimActive] = useState(false);
+  const [lastResult, setLastResult] = useState(null);
   const [dispatchResult, setDispatchResult] = useState(null);
-  const [routeSource,    setRouteSource]    = useState(null);
-  const [streamEvents,   setStreamEvents]   = useState([]);
-  const [telem,          setTelem]          = useState(null);
-  const [wsStatus,       setWsStatus]       = useState('closed');
-  const [mapState,       setMapState]       = useState(DEFAULT_MAP_STATE);
-  const [liveRoutes,     setLiveRoutes]     = useState([]);
-  const [simCrash,       setSimCrash]       = useState(null);
+  const [routeSource, setRouteSource] = useState(null);
+  const [mapState, setMapState] = useState(DEFAULT_MAP_STATE);
+  const [liveRoutes, setLiveRoutes] = useState([]);
+  const [simCrash, setSimCrash] = useState(null);
+  const [incidentLat, setIncidentLat] = useState("");
+  const [incidentLng, setIncidentLng] = useState("");
+  const [locationMode, setLocationMode] = useState("manual");
 
   // Fetch initial map state
   useEffect(() => {
@@ -219,62 +131,44 @@ export default function LiveTacticalMap() {
     });
   }, []);
 
-  // WebSocket live stream
-  useEffect(() => {
-    return createDispatchStream(
-      (ev)  => setStreamEvents(prev => [...prev.slice(-49), ev]),
-      (tel) => setTelem(tel),
-      (st)  => setWsStatus(st),
-    );
-  }, []);
+
 
   // ── Simulate handler ──────────────────────────────────────────────────────
   const handleSimulate = useCallback(async () => {
     if (simActive) return;
     setSimActive(true);
-    setStreamEvents([]);
     setLastResult(null);
     setLiveRoutes([]);
 
-    const simIncidentNode = 'Incident_B';
-    const crashCoords = NODE_COORDS[simIncidentNode] ?? { lat: 19.1100, lng: 72.9280 };
+    const lat = Number(incidentLat?.trim());
+    const lng = Number(incidentLng?.trim());
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      setLastResult({ ok: false, msg: "Invalid coordinates" });
+      setSimActive(false);
+      return;
+    }
+
+    const crashCoords = { lat, lng };
 
     setSimCrash({
-      id: 'CS-SIM', label: 'CRASH · SIM', sub: 'Incident_B · EEH Vikhroli',
+      id: 'CS-SIM', label: 'CRASH · SIM', sub: `${incidentLat}, ${incidentLng}`,
       ...crashCoords, active: true, sim: true,
     });
 
-    setTelem({
-      nodeId:    'MPU-6050-NODE-B3',
-      location:  'EEH · km 15.4 (Incident_B)',
-      status:    'IMPACT_DETECTED',
-      gForceX:   3.71,
-      gForceY:   0.08,
-      gForceZ:   9.81,
-      rollDeg:   62.4,
-      pitchDeg:  14.2,
-      tempC:     41.3,
-      timestamp: new Date().toISOString(),
-    });
-
     const { data: apiResult, error } = await postDispatchTrigger({
-      incident_type:     'road_accident',
-      casualties:        3,
-      incident_location: simIncidentNode,
+      incident_type: 'road_accident',
+      casualties: 3,
+      incident_location: "MAP_SELECTED",
+      incident_lat: lat,
+      incident_lng: lng
     });
 
     if (apiResult && !error) {
       setLastResult({ ok: true, msg: 'API dispatch successful' });
       setDispatchResult(apiResult);
 
-      const agentEvents = buildDispatchAgentEvents({
-        ...apiResult,
-        incident_type: 'road_accident',
-        casualties: 3,
-      });
-      setStreamEvents(agentEvents);
-
-      const parsed    = parseRouteNodes(apiResult.selected_route);
+      const parsed = parseRouteNodes(apiResult.selected_route);
       const hospitalId = parseHospitalId(apiResult.selected_hospital);
 
       if (parsed?.nodes?.length >= 2) {
@@ -284,7 +178,7 @@ export default function LiveTacticalMap() {
 
         if (waypoints.length >= 2) {
           const routeDefs = [{
-            id:    'RT-DISPATCH',
+            id: 'RT-DISPATCH',
             label: `Route · ${parsed.nodes.join(' → ')} · ${parsed.minutes} min`,
             color: '#39d3c3',
             waypoints,
@@ -309,30 +203,43 @@ export default function LiveTacticalMap() {
       setTimeout(() => { setSimActive(false); setSimCrash(null); }, 3500);
 
       const waypoints = [NODE_COORDS.Ambulance_Station, crashCoords, NODE_COORDS.Fortis_Mulund];
-      const enriched  = await buildRouteGeometries([{
+      const enriched = await buildRouteGeometries([{
         id: 'RT-FALLBACK', label: 'Route (backend offline)', color: '#d29922', waypoints,
       }]);
       setLiveRoutes(enriched);
       setRouteSource(enriched[0]?.source ?? 'fallback');
     }
-  }, [simActive]);
+  }, [simActive, incidentLat, incidentLng]);
 
   const activeRoutes = liveRoutes.length > 0 ? liveRoutes : mapState.routes ?? [];
-  const crashSites   = [...(mapState.crash_sites ?? []), ...(simCrash ? [simCrash] : [])];
+  const crashSites = [...(mapState.crash_sites ?? []), ...(simCrash ? [simCrash] : [])];
 
   return (
     <div className="h-full flex overflow-hidden">
       {/* Left: Telemetry + Stream */}
-      <div className="w-72 flex-shrink-0 flex flex-col border-r border-border overflow-hidden">
-        <TelemetryPanel telem={telem} simActive={simActive} />
-        <div className="flex-1 flex flex-col min-h-0 border-t border-border">
-          <AgentStream events={streamEvents} wsStatus={wsStatus} simActive={simActive} />
-        </div>
-      </div>
+      <IncidentControlPanel
+        incidentLat={incidentLat}
+        setIncidentLat={setIncidentLat}
+        incidentLng={incidentLng}
+        setIncidentLng={setIncidentLng}
+        locationMode={locationMode}
+        setLocationMode={setLocationMode}
+        onDispatch={handleSimulate}
+        simActive={simActive}
+        lastResult={lastResult}
+      />
 
       {/* Right: Tactical Map */}
       <div className="flex-1 relative overflow-hidden">
-        <TacticalMap dispatchResult={dispatchResult} />
+        <TacticalMap
+          dispatchResult={dispatchResult}
+          onIncidentPin={(lat, lng) => {
+            console.log("LIVE RECEIVED", lat, lng);
+
+            setIncidentLat(lat.toFixed(6));
+            setIncidentLng(lng.toFixed(6));
+          }}
+        />
 
         {/* Overlay pills */}
         <div className="absolute top-3 left-3 flex items-center gap-2 z-[499] pointer-events-none">
@@ -348,13 +255,6 @@ export default function LiveTacticalMap() {
             </div>
           )}
         </div>
-
-        <SimulatorPanel
-          onSimulate={handleSimulate}
-          simActive={simActive}
-          lastResult={lastResult}
-          routeSource={routeSource}
-        />
       </div>
     </div>
   );

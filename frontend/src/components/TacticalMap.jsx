@@ -10,12 +10,12 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const MAP_STATE_URL   = "http://localhost:8000/api/v1/map-state";
+const MAP_STATE_URL = "http://localhost:8000/api/v1/map-state";
 const POLL_INTERVAL_MS = 5000;
-const DEFAULT_CENTER  = [19.076, 72.8777];
-const DEFAULT_ZOOM    = 13;
-const TILE_URL        = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const TILE_ATTR       = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const DEFAULT_CENTER = [19.076, 72.8777];
+const DEFAULT_ZOOM = 13;
+const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 // ─── Icon factory ─────────────────────────────────────────────────────────────
 
@@ -63,9 +63,9 @@ function makeIncidentIcon() {
 }
 
 const RESOURCE_CONFIG = {
-  hospitals:    { color: "#22c55e", symbol: "✚", label: "Hospital" },
-  police:       { color: "#3b82f6", symbol: "⚑", label: "Police Unit" },
-  ambulances:   { color: "#f97316", symbol: "🚑", label: "Ambulance" },
+  hospitals: { color: "#22c55e", symbol: "✚", label: "Hospital" },
+  police: { color: "#3b82f6", symbol: "⚑", label: "Police Unit" },
+  ambulances: { color: "#f97316", symbol: "🚑", label: "Ambulance" },
   repair_shops: { color: "#eab308", symbol: "🔧", label: "Repair Shop" },
   tow_services: { color: "#a855f7", symbol: "🚛", label: "Tow Service" },
 };
@@ -77,7 +77,7 @@ function haversine(lat1, lng1, lat2, lng2) {
   const φ1 = (lat1 * Math.PI) / 180, φ2 = (lat2 * Math.PI) / 180;
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
   const Δλ = ((lng2 - lng1) * Math.PI) / 180;
-  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+  const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -153,15 +153,15 @@ function buildPopupHtml(type, item, cfg, isSelected, isNearest) {
   if (item.name) rows.push(`<div style="color:#e6edf3;font-weight:700;margin-bottom:6px;">${item.name}</div>`);
   rows.push(`<div style="color:#6e7681;font-size:10px;letter-spacing:0.1em;margin-bottom:8px;">${cfg.label} · ${item.id}</div>`);
   if (item.latitude != null) rows.push(infoRow("Coords", `${item.latitude.toFixed(4)}, ${item.longitude.toFixed(4)}`));
-  if (item.status)              rows.push(infoRow("Status", item.status, statusColor(item.status)));
-  if (item.eta != null)         rows.push(infoRow("ETA", `${item.eta} min`));
+  if (item.status) rows.push(infoRow("Status", item.status, statusColor(item.status)));
+  if (item.eta != null) rows.push(infoRow("ETA", `${item.eta} min`));
   if (item.available_beds != null) rows.push(infoRow("Beds", item.available_beds));
-  if (item.icu_readiness != null)  rows.push(infoRow("ICU", `${item.icu_readiness}%`));
-  if (item.trauma_score != null)   rows.push(infoRow("Trauma", item.trauma_score));
+  if (item.icu_readiness != null) rows.push(infoRow("ICU", `${item.icu_readiness}%`));
+  if (item.trauma_score != null) rows.push(infoRow("Trauma", item.trauma_score));
   if (item.equipment_score != null) rows.push(infoRow("Equipment", item.equipment_score));
   if (item.clearance_capacity != null) rows.push(infoRow("Clearance", item.clearance_capacity));
   if (isSelected) rows.push(`<div style="margin-top:8px;padding:4px 8px;background:#f9731620;border:1px solid #f97316;border-radius:4px;color:#f97316;font-size:10px;text-align:center;letter-spacing:0.1em;">▶ DISPATCHED</div>`);
-  if (isNearest)  rows.push(`<div style="margin-top:8px;padding:4px 8px;background:#22c55e20;border:1px solid #22c55e;border-radius:4px;color:#22c55e;font-size:10px;text-align:center;letter-spacing:0.1em;">◉ NEAREST TO INCIDENT</div>`);
+  if (isNearest) rows.push(`<div style="margin-top:8px;padding:4px 8px;background:#22c55e20;border:1px solid #22c55e;border-radius:4px;color:#22c55e;font-size:10px;text-align:center;letter-spacing:0.1em;">◉ NEAREST TO INCIDENT</div>`);
   return rows.join("");
 }
 
@@ -213,19 +213,22 @@ function DispatchRow({ label, value, accent }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function TacticalMap({ dispatchResult = null, onIncidentPin }) {
-  const mapRef            = useRef(null);
-  const mapDivRef         = useRef(null);
-  const markersRef        = useRef({});
-  const routeLayersRef    = useRef([]);    // array — glow layer + dash layer
+export default function TacticalMap({
+  dispatchResult = null,
+  onIncidentPin = null
+}) {
+  const mapRef = useRef(null);
+  const mapDivRef = useRef(null);
+  const markersRef = useRef({});
+  const routeLayersRef = useRef([]);    // array — glow layer + dash layer
   const incidentMarkerRef = useRef(null);
 
-  const [mapState,    setMapState]    = useState(null);
+  const [mapState, setMapState] = useState(null);
   const [incidentPin, setIncidentPin] = useState(null);
-  const [nearestMap,  setNearestMap]  = useState({});
-  const [mode,        setMode]        = useState("live");
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState(null);
+  const [nearestMap, setNearestMap] = useState({});
+  const [mode, setMode] = useState("live");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // ── Map init ────────────────────────────────────────────────────────────────
 
@@ -252,8 +255,14 @@ export default function TacticalMap({ dispatchResult = null, onIncidentPin }) {
 
     map.on("click", (e) => {
       const { lat, lng } = e.latlng;
+
+      console.log("TACTICAL MAP CLICK", lat, lng);
+
       setIncidentPin({ lat, lng });
-      if (onIncidentPin) onIncidentPin(lat, lng);
+
+      if (typeof onIncidentPin === "function") {
+        onIncidentPin(lat, lng);
+      }
     });
 
     mapRef.current = map;
@@ -269,12 +278,12 @@ export default function TacticalMap({ dispatchResult = null, onIncidentPin }) {
             // Map was unmounted during geolocation resolution — safe to ignore
           }
         },
-        () => {}
+        () => { }
       );
     }
 
     return () => { map.remove(); mapRef.current = null; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Tile pane dark filter observer ──────────────────────────────────────────
@@ -334,12 +343,12 @@ export default function TacticalMap({ dispatchResult = null, onIncidentPin }) {
 
   useEffect(() => {
     if (!mapRef.current || !mapState?.resources) return;
-    const map       = mapRef.current;
+    const map = mapRef.current;
     const resources = mapState.resources;
-    const dispatch  = mapState.active_dispatch;
+    const dispatch = mapState.active_dispatch;
 
-    const selectedAmbuId   = mode === "dispatch" ? extractId(dispatch?.selected_ambulance) : null;
-    const selectedPoliceId = mode === "dispatch" ? extractId(dispatch?.selected_police)    : null;
+    const selectedAmbuId = mode === "dispatch" ? extractId(dispatch?.selected_ambulance) : null;
+    const selectedPoliceId = mode === "dispatch" ? extractId(dispatch?.selected_police) : null;
 
     for (const [type, items] of Object.entries(resources)) {
       if (!items?.length) continue;
@@ -356,10 +365,10 @@ export default function TacticalMap({ dispatchResult = null, onIncidentPin }) {
 
         const isSelected =
           (type === "ambulances" && id === selectedAmbuId) ||
-          (type === "police"     && id === selectedPoliceId);
+          (type === "police" && id === selectedPoliceId);
         const isNearest = mode === "live" && nearestMap[type] === id;
-        const icon      = makeIcon(cfg.color, cfg.symbol, isSelected || isNearest, isSelected);
-        const popup     = buildPopupHtml(type, item, cfg, isSelected, isNearest);
+        const icon = makeIcon(cfg.color, cfg.symbol, isSelected || isNearest, isSelected);
+        const popup = buildPopupHtml(type, item, cfg, isSelected, isNearest);
 
         if (markersRef.current[type][id]) {
           markersRef.current[type][id].setIcon(icon);
@@ -443,11 +452,11 @@ export default function TacticalMap({ dispatchResult = null, onIncidentPin }) {
   // ── Derived values ──────────────────────────────────────────────────────────
 
   const activeDispatch = mapState?.active_dispatch;
-  const routeSource    = dispatchResult?.route_source    || activeDispatch?.route_source;
-  const etaSeconds     = dispatchResult?.real_eta_seconds || activeDispatch?.real_eta_seconds;
-  const policeEtaMins  = dispatchResult?.selected_police_eta || activeDispatch?.selected_police_eta;
-  const policeId       = dispatchResult?.selected_police     || activeDispatch?.selected_police;
-  const ambulanceId    = activeDispatch?.selected_ambulance;
+  const routeSource = dispatchResult?.route_source || activeDispatch?.route_source;
+  const etaSeconds = dispatchResult?.real_eta_seconds || activeDispatch?.real_eta_seconds;
+  const policeEtaMins = dispatchResult?.selected_police_eta || activeDispatch?.selected_police_eta;
+  const policeId = dispatchResult?.selected_police || activeDispatch?.selected_police;
+  const ambulanceId = activeDispatch?.selected_ambulance;
 
   const resourceCounts = mapState?.resources
     ? Object.fromEntries(Object.entries(mapState.resources).map(([k, v]) => [k, v?.length ?? 0]))
@@ -540,7 +549,7 @@ export default function TacticalMap({ dispatchResult = null, onIncidentPin }) {
         ))}
         {mode === "live" && (
           <div style={{ color: "#6e7681", fontSize: 10, marginTop: 8, borderTop: "1px solid #30363d", paddingTop: 8 }}>
-            Click map to pin incident
+            Click map to select incident coordinates
           </div>
         )}
       </div>
@@ -558,9 +567,9 @@ export default function TacticalMap({ dispatchResult = null, onIncidentPin }) {
             DISPATCH SUMMARY
           </div>
           <DispatchRow label="Ambulance" value={activeDispatch.selected_ambulance} />
-          <DispatchRow label="Police"    value={activeDispatch.selected_police} />
-          <DispatchRow label="Hospital"  value={activeDispatch.selected_hospital} />
-          <DispatchRow label="Incident"  value={activeDispatch.incident_location} />
+          <DispatchRow label="Police" value={activeDispatch.selected_police} />
+          <DispatchRow label="Hospital" value={activeDispatch.selected_hospital} />
+          <DispatchRow label="Incident" value={activeDispatch.incident_location} />
           {activeDispatch.route_source && (
             <DispatchRow
               label="Route"

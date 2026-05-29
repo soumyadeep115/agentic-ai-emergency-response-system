@@ -131,7 +131,12 @@ graph = builder.compile()
 # Dispatch runner
 # -------------------------
 def run_dispatch(initial_state):
-    return graph.invoke(initial_state)
+    result = graph.invoke(initial_state)
+
+    result["incident_lat"] = initial_state.get("incident_lat")
+    result["incident_lng"] = initial_state.get("incident_lng")
+
+    return result
 
 
 # -------------------------
