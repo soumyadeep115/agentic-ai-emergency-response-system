@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import TacticalMap from '../components/TacticalMap.jsx';
 import {
   postDispatchTrigger,
+  postOfflineAlert,
   getMapState,
   NODE_COORDS,
   parseRouteNodes,
@@ -27,6 +28,7 @@ const TYPE_COLOR = { info: '#58a6ff', warn: '#d29922', ok: '#3fb950', done: '#39
 // ─────────────────────────────────────────────────────────────────────────────
 
 function IncidentControlPanel({
+  startOfflineVoiceSOS,
   incidentLat,
   setIncidentLat,
   incidentLng,
@@ -107,8 +109,20 @@ function IncidentControlPanel({
         >
           {simActive ? "DISPATCHING..." : "DISPATCH INCIDENT"}
         </button>
-      </div>
+
+        <button
+          onClick={startOfflineVoiceSOS}
+          className="btn-danger"
+          style={{
+            marginTop: "8px",
+            background: "#7f1d1d",
+            border: "1px solid #ef4444"
+          }}
+        >
+          OFFLINE VOICE SOS
+        </button>
     </div>
+  </div>
   );
 }
 
@@ -123,6 +137,31 @@ export default function LiveTacticalMap() {
   const [incidentLat, setIncidentLat] = useState("");
   const [incidentLng, setIncidentLng] = useState("");
   const [locationMode, setLocationMode] = useState("manual");
+  const startOfflineVoiceSOS = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Speech recognition not supported");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+
+      console.log("OFFLINE VOICE:", transcript);
+
+      await postOfflineAlert(transcript);
+
+      alert(`Offline alert sent: ${transcript}`);
+    };
+
+    recognition.start();
+  };
 
   // Fetch initial map state
   useEffect(() => {
@@ -218,6 +257,7 @@ export default function LiveTacticalMap() {
     <div className="h-full flex overflow-hidden">
       {/* Left: Telemetry + Stream */}
       <IncidentControlPanel
+        startOfflineVoiceSOS={startOfflineVoiceSOS}
         incidentLat={incidentLat}
         setIncidentLat={setIncidentLat}
         incidentLng={incidentLng}

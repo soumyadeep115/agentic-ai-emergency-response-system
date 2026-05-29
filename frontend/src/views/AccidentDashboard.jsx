@@ -1,12 +1,13 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getHotspots } from '../services/api.js';
 import { usePolling } from '../hooks/usePolling.js';
+import { getOfflineAlerts } from "../services/api";
 
 const SEV_MAP = {
-  critical: { cls: 'badge-critical', bar: 'bg-accent-red',    pct: '100%' },
-  high:     { cls: 'badge-high',     bar: 'bg-accent-orange', pct: '65%'  },
-  medium:   { cls: 'badge-medium',   bar: 'bg-yellow-400',    pct: '40%'  },
-  low:      { cls: 'badge-low',      bar: 'bg-accent-blue',   pct: '22%'  },
+  critical: { cls: 'badge-critical', bar: 'bg-accent-red', pct: '100%' },
+  high: { cls: 'badge-high', bar: 'bg-accent-orange', pct: '65%' },
+  medium: { cls: 'badge-medium', bar: 'bg-yellow-400', pct: '40%' },
+  low: { cls: 'badge-low', bar: 'bg-accent-blue', pct: '22%' },
 };
 
 function SourcePill({ source, error }) {
@@ -43,7 +44,7 @@ function EmptyState({ endpoint }) {
     <div className="flex flex-col items-center justify-center py-12 gap-3">
       <div className="w-8 h-8 rounded-full border border-border flex items-center justify-center">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#484f58" strokeWidth="2">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       </div>
       <div className="text-center">
@@ -56,6 +57,7 @@ function EmptyState({ endpoint }) {
 }
 
 export default function AccidentDashboard() {
+  const [offlineAlerts, setOfflineAlerts] = useState([]);
   const fetchFn = useCallback(() => getHotspots(), []);
   // Initial state: empty — no mock data
   const { data, source, error, loading } = usePolling(
@@ -64,19 +66,32 @@ export default function AccidentDashboard() {
     15_000,
   );
 
-  const zones   = data?.zones   ?? [];
+  const zones = data?.zones ?? [];
   const metrics = data?.metrics ?? null;
 
   const metricCards = [
-    { label: 'Highest Accident Zone', value: metrics?.highest_zone ?? metrics?.highestZone,           sub: 'Primary risk corridor',           accent: 'bg-accent-red',    icon: '⚠' },
-    { label: 'Critical Time Window',  value: metrics?.critical_window ?? metrics?.criticalWindow,     sub: 'Peak incident window (IST)',       accent: 'bg-accent-orange', icon: '⏱' },
-    { label: 'Total 24H Crashes',     value: metrics?.crashes_24h ?? metrics?.crashes24h,             sub: `${metrics?.active_incidents ?? metrics?.activeIncidents ?? '—'} active`, accent: 'bg-accent-amber',  icon: '🚨' },
-    { label: 'Avg Response Time',     value: metrics?.avg_response_min != null ? `${metrics.avg_response_min} min` : null, sub: 'Target: ≤10.0 min', accent: 'bg-accent-green',  icon: '⚡' },
-    { label: 'SLA Compliance',        value: metrics?.sla_compliance_pct != null ? `${metrics.sla_compliance_pct}%` : null, sub: 'Incidents within SLA', accent: 'bg-accent-blue', icon: '✓' },
-    { label: 'Units Deployed',        value: metrics?.units_deployed ?? metrics?.unitsDeployed,       sub: 'Active EMS/Police units',          accent: 'bg-accent-purple', icon: '🚑' },
+    { label: 'Highest Accident Zone', value: metrics?.highest_zone ?? metrics?.highestZone, sub: 'Primary risk corridor', accent: 'bg-accent-red', icon: '⚠' },
+    { label: 'Critical Time Window', value: metrics?.critical_window ?? metrics?.criticalWindow, sub: 'Peak incident window (IST)', accent: 'bg-accent-orange', icon: '⏱' },
+    { label: 'Total 24H Crashes', value: metrics?.crashes_24h ?? metrics?.crashes24h, sub: `${metrics?.active_incidents ?? metrics?.activeIncidents ?? '—'} active`, accent: 'bg-accent-amber', icon: '🚨' },
+    { label: 'Avg Response Time', value: metrics?.avg_response_min != null ? `${metrics.avg_response_min} min` : null, sub: 'Target: ≤10.0 min', accent: 'bg-accent-green', icon: '⚡' },
+    { label: 'SLA Compliance', value: metrics?.sla_compliance_pct != null ? `${metrics.sla_compliance_pct}%` : null, sub: 'Incidents within SLA', accent: 'bg-accent-blue', icon: '✓' },
+    { label: 'Units Deployed', value: metrics?.units_deployed ?? metrics?.unitsDeployed, sub: 'Active EMS/Police units', accent: 'bg-accent-purple', icon: '🚑' },
   ];
 
   const isReady = !loading && zones.length > 0;
+
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      const alerts = await getOfflineAlerts();
+      setOfflineAlerts(alerts);
+    };
+
+    fetchAlerts();
+
+    const interval = setInterval(fetchAlerts, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
@@ -96,7 +111,7 @@ export default function AccidentDashboard() {
       <section className="panel">
         <div className="panel-header">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#484f58" strokeWidth="2">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
           </svg>
           <span className="label-xs">Top Critical Accident Locations</span>
           <SourcePill source={source} error={error} />
@@ -119,7 +134,7 @@ export default function AccidentDashboard() {
               const rank = zone.rank ?? idx + 1;
               return (
                 <div key={zone.id ?? idx} className="flex items-center gap-3 px-3 py-2.5 hover:bg-card/50 transition-colors">
-                  <div className="w-5 font-mono text-[10px] text-muted font-bold shrink-0">{String(rank).padStart(2,'0')}</div>
+                  <div className="w-5 font-mono text-[10px] text-muted font-bold shrink-0">{String(rank).padStart(2, '0')}</div>
                   <div className="w-1 h-8 rounded-full bg-border shrink-0 relative overflow-hidden">
                     <div className={`absolute bottom-0 inset-x-0 ${sev.bar} rounded-full`} style={{ height: sev.pct }} />
                   </div>
@@ -148,12 +163,44 @@ export default function AccidentDashboard() {
         )}
       </section>
 
+      {offlineAlerts.length > 0 && (
+        <section className="panel">
+          <div className="panel-header">
+            <span className="label-xs text-red-400">
+              OFFLINE EMERGENCY ALERTS
+            </span>
+          </div>
+
+          <div className="divide-y divide-border/50">
+            {offlineAlerts.map((alert, idx) => (
+              <div
+                key={idx}
+                className="px-4 py-3 flex justify-between items-center"
+              >
+                <div>
+                  <div className="text-sm font-semibold text-red-400">
+                    {alert.location}
+                  </div>
+                  <div className="text-[10px] text-muted">
+                    Voice SOS triggered
+                  </div>
+                </div>
+
+                <div className="text-[10px] font-mono text-accent-orange">
+                  OFFLINE
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Offline notice */}
       {source === 'offline' && !loading && (
         <div className="panel px-4 py-3 flex items-start gap-3 border-accent-orange/30 bg-orange-500/5">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d29922" strokeWidth="2" className="mt-0.5 shrink-0">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
           <div>
             <div className="text-[11px] font-semibold text-accent-orange">Backend Offline</div>

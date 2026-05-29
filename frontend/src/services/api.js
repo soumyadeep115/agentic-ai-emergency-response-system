@@ -288,3 +288,26 @@ export function createDispatchStream(onAgentEvent, onTelemetry, onStatusChange) 
     ws?.close();
   };
 }
+
+// Voice command for offline fallback :
+
+export async function postOfflineAlert(data) {
+  return safeFetch(`${BASE}/api/v1/offline-alert`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  });
+}
+
+export async function getOfflineAlert() {
+  return safeFetch(`${BASE}/api/v1/offline-alert`);
+}
+
+export const getOfflineAlerts = async () => {
+  const response = await fetch(
+    "http://127.0.0.1:8000/api/v1/offline-alerts"
+  );
+  return response.json();
+};

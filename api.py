@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import text
 import json
+from datetime import datetime
 
 from main import run_dispatch
 from utils.db import SessionLocal
@@ -10,6 +11,8 @@ from utils.import_resources import import_resources
 from models.dispatch_log import DispatchLog
 
 app = FastAPI()
+offline_alert = None
+offline_alerts = []
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,6 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class OfflineAlertRequest(BaseModel):
+    location_text: str
 
 class IncidentRequest(BaseModel):
     incident_type: str
@@ -77,6 +82,29 @@ def dispatch_incident(request: IncidentRequest):
         db.close()
 
     return result
+
+@app.post("/api/v1/offline-alert")
+async def offline_alert(payload: dict):
+    transcript = payload.get("transcript", "Unknown")
+
+    location = transcript.replace("accident in", "").strip()
+
+    alert = {
+        "location": location,
+        "timestamp": datetime.now().isoformat(),
+        "status": "pending"
+    }
+
+    offline_alerts.append(alert)
+
+    return {
+        "status": "received",
+        "alert": alert
+    }
+
+@app.get("/api/v1/offline-alerts")
+async def get_offline_alerts():
+    return offline_alerts
 
 
 @app.get("/dispatch-history")

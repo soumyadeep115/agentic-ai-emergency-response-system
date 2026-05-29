@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getResources } from '../services/api.js';
+import { getResources, postOfflineAlert } from '../services/api.js';
 import TacticalMap from '../components/TacticalMap.jsx';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8,19 +8,19 @@ import TacticalMap from '../components/TacticalMap.jsx';
 const BASE = 'http://127.0.0.1:8000';
 
 const INCIDENT_TYPES = [
-  { value: 'road_accident',   label: 'Road Accident',   icon: '🚗' },
-  { value: 'fire',            label: 'Fire',             icon: '🔥' },
-  { value: 'medical',         label: 'Medical Emergency',icon: '🏥' },
-  { value: 'flood',           label: 'Flood',            icon: '🌊' },
-  { value: 'other',           label: 'Other',            icon: '⚠️'  },
+  { value: 'road_accident', label: 'Road Accident', icon: '🚗' },
+  { value: 'fire', label: 'Fire', icon: '🔥' },
+  { value: 'medical', label: 'Medical Emergency', icon: '🏥' },
+  { value: 'flood', label: 'Flood', icon: '🌊' },
+  { value: 'other', label: 'Other', icon: '⚠️' },
 ];
 
 const TYPE_CONFIG = {
-  hospitals:    { cls: 'rp-hospital',  emoji: '✚',  color: '#3fb950', label: 'Hospital'      },
-  police:       { cls: 'rp-police',    emoji: '🛡',  color: '#58a6ff', label: 'Police Station' },
-  ambulances:   { cls: 'rp-ambulance', emoji: '🚑',  color: '#f97316', label: 'Ambulance Hub'  },
-  repair_shops: { cls: 'rp-repair',    emoji: '🔧',  color: '#d29922', label: 'Repair Shop'    },
-  tow_services: { cls: 'rp-tow',       emoji: '🚛',  color: '#8b5cf6', label: 'Tow Service'    },
+  hospitals: { cls: 'rp-hospital', emoji: '✚', color: '#3fb950', label: 'Hospital' },
+  police: { cls: 'rp-police', emoji: '🛡', color: '#58a6ff', label: 'Police Station' },
+  ambulances: { cls: 'rp-ambulance', emoji: '🚑', color: '#f97316', label: 'Ambulance Hub' },
+  repair_shops: { cls: 'rp-repair', emoji: '🔧', color: '#d29922', label: 'Repair Shop' },
+  tow_services: { cls: 'rp-tow', emoji: '🚛', color: '#8b5cf6', label: 'Tow Service' },
 };
 
 const STATUS_COLOR = { available: '#3fb950', busy: '#f97316', offline: '#484f58' };
@@ -90,8 +90,8 @@ function injectPortalIconStyles() {
 // ─────────────────────────────────────────────────────────────────────────────
 function ResourceMap({ resources, visibleTypes, loading }) {
   const containerRef = useRef(null);
-  const mapRef       = useRef(null);
-  const markersRef   = useRef([]);
+  const mapRef = useRef(null);
+  const markersRef = useRef([]);
 
   useEffect(() => {
     const L = window.L;
@@ -112,7 +112,7 @@ function ResourceMap({ resources, visibleTypes, loading }) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(({ coords }) => {
         map.setView([coords.latitude, coords.longitude], 13);
-      }, () => {});
+      }, () => { });
     }
 
     mapRef.current = map;
@@ -196,11 +196,37 @@ function ResourceMap({ resources, visibleTypes, loading }) {
 // SOS Button Panel
 // ─────────────────────────────────────────────────────────────────────────────
 function SOSPanel({ onDispatch, dispatching, dispatchResult, gpsError }) {
-  const [expanded,      setExpanded]      = useState(false);
-  const [incidentType,  setIncidentType]  = useState('road_accident');
-  const [casualties,    setCasualties]    = useState(1);
-  const [countdown,     setCountdown]     = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const [incidentType, setIncidentType] = useState('road_accident');
+  const [casualties, setCasualties] = useState(1);
+  const [countdown, setCountdown] = useState(null);
   const countdownRef = useRef(null);
+  const startOfflineVoiceSOS = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Voice recognition not supported");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+
+      console.log("VOICE TRANSCRIPT:", transcript);
+
+      await postOfflineAlert({
+        transcript: transcript
+      });
+
+      alert(`Offline alert sent: ${transcript}`);
+    };
+
+    recognition.start();
+  };
 
   // Auto-fire after 3s if user doesn't interact
   const startCountdown = useCallback(() => {
@@ -347,8 +373,8 @@ function SOSPanel({ onDispatch, dispatching, dispatchResult, gpsError }) {
               background: dispatching
                 ? 'rgba(239,68,68,0.3)'
                 : countdown !== null
-                ? 'rgba(239,68,68,0.25)'
-                : 'rgba(239,68,68,0.15)',
+                  ? 'rgba(239,68,68,0.25)'
+                  : 'rgba(239,68,68,0.15)',
               border: `3px solid ${countdown !== null || dispatching ? '#ef4444' : 'rgba(239,68,68,0.6)'}`,
               color: '#ef4444',
               fontSize: dispatching ? '11px' : '22px',
@@ -473,6 +499,24 @@ function SOSPanel({ onDispatch, dispatching, dispatchResult, gpsError }) {
         </div>
       )}
 
+      <button
+        onClick={startOfflineVoiceSOS}
+        style={{
+          width: '100%',
+          padding: '10px',
+          marginTop: '12px',
+          background: '#7f1d1d',
+          border: '1px solid #ef4444',
+          borderRadius: '4px',
+          color: '#fff',
+          fontSize: '10px',
+          fontFamily: 'monospace',
+          cursor: 'pointer'
+        }}
+      >
+        OFFLINE VOICE SOS
+      </button>
+
       <div style={{ fontSize: '9px', fontFamily: 'monospace', color: '#30363d', textAlign: 'center' }}>
         Tap SOS to alert emergency services
       </div>
@@ -484,7 +528,7 @@ function SOSPanel({ onDispatch, dispatching, dispatchResult, gpsError }) {
 // Resource sidebar (Live Browse)
 // ─────────────────────────────────────────────────────────────────────────────
 function ResourceList({ resources, visibleTypes, onToggle }) {
-  const totalItems     = Object.values(resources).reduce((s, a) => s + a.length, 0);
+  const totalItems = Object.values(resources).reduce((s, a) => s + a.length, 0);
   const availableItems = Object.values(resources).flat().filter(r => r.status === 'available').length;
 
   return (
@@ -508,7 +552,7 @@ function ResourceList({ resources, visibleTypes, onToggle }) {
       {/* Toggles */}
       <div style={{ overflowY: 'auto', flex: 1 }}>
         {Object.entries(TYPE_CONFIG).map(([type, cfg]) => {
-          const items   = resources[type] ?? [];
+          const items = resources[type] ?? [];
           const visible = visibleTypes[type];
           return (
             <button
@@ -548,28 +592,28 @@ function ResourceList({ resources, visibleTypes, onToggle }) {
 // Main UserPortal view
 // ─────────────────────────────────────────────────────────────────────────────
 export default function UserPortal() {
-  const [resources,      setResources]      = useState(EMPTY_RESOURCES);
-  const [visibleTypes,   setVisibleTypes]   = useState(INITIAL_VISIBLE);
-  const [loading,        setLoading]        = useState(true);
-  const [fetchError,     setFetchError]     = useState(null);
-  const [lastFetched,    setLastFetched]    = useState(null);
-  const [dispatching,    setDispatching]    = useState(false);
+  const [resources, setResources] = useState(EMPTY_RESOURCES);
+  const [visibleTypes, setVisibleTypes] = useState(INITIAL_VISIBLE);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [lastFetched, setLastFetched] = useState(null);
+  const [dispatching, setDispatching] = useState(false);
   const [dispatchResult, setDispatchResult] = useState(null);
-  const [dispatchError,  setDispatchError]  = useState(null);
-  const [gpsError,       setGpsError]       = useState(false);
-  const [mapMode,        setMapMode]        = useState('live'); // 'live' | 'dispatch'
+  const [dispatchError, setDispatchError] = useState(null);
+  const [gpsError, setGpsError] = useState(false);
+  const [mapMode, setMapMode] = useState('live'); // 'live' | 'dispatch'
 
   // ── Fetch resources ─────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
     try {
-      const res  = await fetch(`${BASE}/api/v1/resources`);
+      const res = await fetch(`${BASE}/api/v1/resources`);
       const data = await res.json();
       setResources({
-        hospitals:    data.hospitals    ?? [],
-        police:       data.police       ?? [],
-        ambulances:   data.ambulances   ?? [],
+        hospitals: data.hospitals ?? [],
+        police: data.police ?? [],
+        ambulances: data.ambulances ?? [],
         repair_shops: data.repair_shops ?? [],
         tow_services: data.tow_services ?? [],
       });
@@ -599,7 +643,7 @@ export default function UserPortal() {
           incident_location: 'Incident_B', // default node
           ...(lat != null && lng != null ? { incident_lat: lat, incident_lng: lng } : {}),
         };
-        const res  = await fetch(`${BASE}/dispatch`, {
+        const res = await fetch(`${BASE}/dispatch`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
@@ -750,10 +794,10 @@ export default function UserPortal() {
                 Dispatch Log
               </div>
               {[
-                ['Ambulance',  dispatchResult.selected_ambulance],
-                ['Hospital',   dispatchResult.selected_hospital],
-                ['Route',      dispatchResult.selected_route],
-                ['Police',     dispatchResult.police_status],
+                ['Ambulance', dispatchResult.selected_ambulance],
+                ['Hospital', dispatchResult.selected_hospital],
+                ['Route', dispatchResult.selected_route],
+                ['Police', dispatchResult.police_status],
                 ['Escalation', dispatchResult.escalation_status],
               ].filter(([, v]) => v).map(([label, val]) => (
                 <div key={label} style={{ marginBottom: '8px' }}>
