@@ -13,8 +13,10 @@ class EmergencyState(TypedDict):
     # ── Police ────────────────────────────────────────────────
     police_required: bool
     police_status: str
-    selected_police: Optional[str]        # unit_id of selected police unit
-    selected_police_eta: Optional[int]    # ETA in minutes as integer
+    selected_police: Optional[str]
+    selected_police_eta: Optional[int]
+    selected_police_lat: Optional[float]
+    selected_police_lng: Optional[float]
 
     # ── Candidates ────────────────────────────────────────────
     ambulance_candidates: List[str]

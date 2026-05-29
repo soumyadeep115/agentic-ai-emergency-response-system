@@ -124,14 +124,7 @@ builder.add_node("escalate_emergency", escalate_emergency)
 
 builder.set_entry_point("assess_incident")
 
-builder.add_conditional_edges(
-    "assess_incident",
-    route_severity,
-    {
-        "critical": "coordinate_police",
-        "normal":   "allocate_ambulance"
-    }
-)
+builder.add_edge("assess_incident", "coordinate_police")
 
 builder.add_conditional_edges(
     "evaluate_hospital",

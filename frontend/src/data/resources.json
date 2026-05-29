@@ -3,11 +3,21 @@
     {
       "id": "HOSP_001",
       "name": "Fortis Mulund",
-      "latitude": 19.1748,
-      "longitude": 73.0243,
+      "latitude": 23,
+      "longitude": 74,
       "available_beds": 80,
       "icu_readiness": 90,
-      "trauma_score": 85
+      "trauma_score": 85,
+      "status": "available"
+    },
+    {
+      "id": "HOSP_002",
+      "name": "City Hospital",
+      "latitude": 19.2183,
+      "longitude": 72.9781,
+      "available_beds": 67,
+      "icu_readiness": 35,
+      "trauma_score": 64
     }
   ],
   "police": [
@@ -25,10 +35,19 @@
     {
       "id": "AMB_001",
       "name": "Central Ambulance Hub",
-      "latitude": 19.0896,
-      "longitude": 72.8656,
+      "latitude": 19.47,
+      "longitude": 72.8,
       "eta": 4,
       "equipment_score": 90,
+      "status": "available"
+    },
+    {
+      "id": "AMB_002",
+      "name": "Thane Ambulance",
+      "latitude": 19.1869,
+      "longitude": 72.9756,
+      "eta": 5,
+      "equipment_score": 67,
       "status": "available"
     }
   ],
