@@ -16,7 +16,13 @@ offline_alerts = []
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://agentic-ai-emergency-response-system.vercel.app",
+        "https://agentic-ai-emergency-response-system-orx0ddaa0.vercel.app",
+        "https://agentic-ai-emergency-git-738cf2-soumyadeep-mukherjee-s-projects.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
