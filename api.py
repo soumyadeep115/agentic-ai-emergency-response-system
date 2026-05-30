@@ -23,7 +23,12 @@ app.add_middleware(
 )
 
 class OfflineAlertRequest(BaseModel):
+    transcript: str
     location_text: str
+    incident_type: str
+    casualties: int
+    sms_message: str | None = None
+    timestamp: str | None = None
 
 class IncidentRequest(BaseModel):
     incident_type: str
@@ -84,14 +89,15 @@ def dispatch_incident(request: IncidentRequest):
     return result
 
 @app.post("/api/v1/offline-alert")
-async def offline_alert(payload: dict):
-    transcript = payload.get("transcript", "Unknown")
-
-    location = transcript.replace("accident in", "").strip()
+async def offline_alert(payload: OfflineAlertRequest):
 
     alert = {
-        "location": location,
-        "timestamp": datetime.now().isoformat(),
+        "location": payload.location_text,
+        "incident_type": payload.incident_type,
+        "casualties": payload.casualties,
+        "transcript": payload.transcript,
+        "sms_message": payload.sms_message,
+        "timestamp": payload.timestamp or datetime.now().isoformat(),
         "status": "pending"
     }
 

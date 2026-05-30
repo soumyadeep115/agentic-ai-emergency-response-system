@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getResources, postOfflineAlert } from '../services/api.js';
 import TacticalMap from '../components/TacticalMap.jsx';
+import OfflineSOS from '../components/OfflineSOS';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -110,9 +111,20 @@ function ResourceMap({ resources, visibleTypes, loading }) {
 
     // Center on device GPS
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(({ coords }) => {
-        map.setView([coords.latitude, coords.longitude], 13);
-      }, () => { });
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          if (
+            mapRef.current &&
+            mapRef.current._container
+          ) {
+            mapRef.current.setView(
+              [coords.latitude, coords.longitude],
+              13
+            );
+          }
+        },
+        () => { }
+      );
     }
 
     mapRef.current = map;
@@ -201,32 +213,6 @@ function SOSPanel({ onDispatch, dispatching, dispatchResult, gpsError }) {
   const [casualties, setCasualties] = useState(1);
   const [countdown, setCountdown] = useState(null);
   const countdownRef = useRef(null);
-  const startOfflineVoiceSOS = () => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert("Voice recognition not supported");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-IN";
-
-    recognition.onresult = async (event) => {
-      const transcript = event.results[0][0].transcript;
-
-      console.log("VOICE TRANSCRIPT:", transcript);
-
-      await postOfflineAlert({
-        transcript: transcript
-      });
-
-      alert(`Offline alert sent: ${transcript}`);
-    };
-
-    recognition.start();
-  };
 
   // Auto-fire after 3s if user doesn't interact
   const startCountdown = useCallback(() => {
@@ -499,24 +485,6 @@ function SOSPanel({ onDispatch, dispatching, dispatchResult, gpsError }) {
         </div>
       )}
 
-      <button
-        onClick={startOfflineVoiceSOS}
-        style={{
-          width: '100%',
-          padding: '10px',
-          marginTop: '12px',
-          background: '#7f1d1d',
-          border: '1px solid #ef4444',
-          borderRadius: '4px',
-          color: '#fff',
-          fontSize: '10px',
-          fontFamily: 'monospace',
-          cursor: 'pointer'
-        }}
-      >
-        OFFLINE VOICE SOS
-      </button>
-
       <div style={{ fontSize: '9px', fontFamily: 'monospace', color: '#30363d', textAlign: 'center' }}>
         Tap SOS to alert emergency services
       </div>
@@ -762,8 +730,14 @@ export default function UserPortal() {
 
         {/* Left sidebar */}
         <div style={{
-          width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column',
-          borderRight: '1px solid #21262d', background: '#0d1117', overflow: 'hidden',
+          width: '260px',
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          borderRight: '1px solid #21262d',
+          background: '#0d1117',
+          overflowY: 'auto',
+          maxHeight: '100vh'
         }}>
           {/* SOS panel */}
           <div style={{ padding: '14px', borderBottom: '1px solid #21262d' }}>
@@ -776,6 +750,10 @@ export default function UserPortal() {
               dispatchResult={dispatchResult}
               gpsError={gpsError}
             />
+
+            <div style={{ marginTop: '12px' }}>
+              <OfflineSOS />
+            </div>
           </div>
 
           {/* Resource toggles — only in live mode */}
