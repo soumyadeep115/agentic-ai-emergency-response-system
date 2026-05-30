@@ -248,7 +248,7 @@ function Footer() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
       {[
-        { dot: GREEN,  label: 'FastAPI Backend',  val: ':8000'      },
+        { dot: GREEN,  label: 'FastAPI Backend',  val: 'LIVE'      },
         { dot: GREEN,  label: 'LangGraph Engine', val: 'v0.2.x'     },
         { dot: GREEN,  label: 'MPU-6050 Node',    val: 'NODE-A7'    },
         { dot: MUTED,  label: 'Region',           val: 'Mumbai · IN' },

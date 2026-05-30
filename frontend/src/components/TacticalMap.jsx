@@ -10,7 +10,8 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const MAP_STATE_URL = "http://localhost:8000/api/v1/map-state";
+const BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
+const MAP_STATE_URL = `${BASE}/api/v1/map-state`;
 const POLL_INTERVAL_MS = 5000;
 const DEFAULT_CENTER = [19.076, 72.8777];
 const DEFAULT_ZOOM = 13;

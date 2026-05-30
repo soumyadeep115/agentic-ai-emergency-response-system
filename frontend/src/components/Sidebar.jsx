@@ -309,7 +309,7 @@ export default function Sidebar({ currentView, setCurrentView, systemTime }) {
       <div className="border-t border-border px-3 py-3 space-y-1.5">
         <div className="label-xs mb-1.5">System Status</div>
         {[
-          { label: 'FastAPI Backend',   status: 'ok',  val: ':8000' },
+          { label: 'FastAPI Backend',   status: 'ok',  val: 'ONLINE' },
           { label: 'LangGraph Engine',  status: 'ok',  val: 'v0.2.x' },
           { label: 'MPU-6050 Node',     status: 'ok',  val: 'NODE-A7' },
           { label: 'DB Connection',     status: 'ok',  val: 'PostgreSQL' },

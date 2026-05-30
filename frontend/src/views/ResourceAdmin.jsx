@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import LocationPicker from '../components/LocationPicker';
 
+const BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
+
 // ── Resource type config ─────────────────────────────────────────────────────
 const RESOURCE_TYPES = [
   {
@@ -727,7 +729,7 @@ export default function ResourceAdmin() {
   useEffect(() => {
     const fetchResources = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/resources");
+        const res = await fetch(`${BASE}/api/v1/resources`);
         const data = await res.json();
         setResources(data);
         localStorage.setItem("roadsos_resources", JSON.stringify(data));
@@ -743,7 +745,7 @@ export default function ResourceAdmin() {
     setResources(newResources);
     localStorage.setItem("roadsos_resources", JSON.stringify(newResources));
 
-    fetch("http://127.0.0.1:8000/api/v1/save-resources", {
+    fetch(`${BASE}/api/v1/save-resources`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newResources),
