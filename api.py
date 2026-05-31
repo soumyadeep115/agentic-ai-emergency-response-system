@@ -185,55 +185,57 @@ def get_incident_reports():
 def get_resources():
     db = SessionLocal()
 
-    hospitals    = db.execute(text("SELECT * FROM hospitals")).fetchall()
-    police       = db.execute(text("SELECT * FROM police_units")).fetchall()
-    ambulances   = db.execute(text("SELECT * FROM ambulances")).fetchall()
-    repair_shops = db.execute(text("SELECT * FROM repair_shops")).fetchall()
-    tow_services = db.execute(text("SELECT * FROM tow_services")).fetchall()
+    try:
+        hospitals = db.execute(text("SELECT * FROM hospitals")).fetchall()
+        police = db.execute(text("SELECT * FROM police_units")).fetchall()
+        ambulances = db.execute(text("SELECT * FROM ambulances")).fetchall()
+        repair_shops = db.execute(text("SELECT * FROM repair_shops")).fetchall()
+        tow_services = db.execute(text("SELECT * FROM tow_services")).fetchall()
 
-    db.close()
+        return {
+            "hospitals": [
+                {
+                    "id": row.hospital_id,
+                    "name": row.name,
+                    "latitude": row.latitude,
+                    "longitude": row.longitude,
+                    "available_beds": row.available_beds,
+                    "icu_readiness": row.icu_readiness,
+                    "trauma_score": row.trauma_score,
+                    "status": "available"
+                }
+                for row in hospitals
+            ],
+            "police": [
+                {
+                    "id": row.unit_id,
+                    "name": row.name,
+                    "latitude": row.latitude,
+                    "longitude": row.longitude,
+                    "eta": row.eta,
+                    "clearance_capacity": row.clearance_capacity,
+                    "status": row.status
+                }
+                for row in police
+            ],
+            "ambulances": [
+                {
+                    "id": row.ambulance_id,
+                    "name": row.name,
+                    "latitude": row.latitude,
+                    "longitude": row.longitude,
+                    "eta": row.eta,
+                    "equipment_score": row.equipment_score,
+                    "status": row.status
+                }
+                for row in ambulances
+            ],
+            "repair_shops": [dict(row._mapping) for row in repair_shops],
+            "tow_services": [dict(row._mapping) for row in tow_services],
+        }
 
-    return {
-        "hospitals": [
-            {
-                "id":             row.hospital_id,
-                "name":           row.name,
-                "latitude":       row.latitude,
-                "longitude":      row.longitude,
-                "available_beds": row.available_beds,
-                "icu_readiness":  row.icu_readiness,
-                "trauma_score":   row.trauma_score,
-                "status":         "available"
-            }
-            for row in hospitals
-        ],
-        "police": [
-            {
-                "id":                 row.unit_id,
-                "name":               row.name,
-                "latitude":           row.latitude,
-                "longitude":          row.longitude,
-                "eta":                row.eta,
-                "clearance_capacity": row.clearance_capacity,
-                "status":             row.status
-            }
-            for row in police
-        ],
-        "ambulances": [
-            {
-                "id":              row.ambulance_id,
-                "name":            row.name,
-                "latitude":        row.latitude,
-                "longitude":       row.longitude,
-                "eta":             row.eta,
-                "equipment_score": row.equipment_score,
-                "status":          row.status
-            }
-            for row in ambulances
-        ],
-        "repair_shops": [dict(row._mapping) for row in repair_shops],
-        "tow_services":  [dict(row._mapping) for row in tow_services],
-    }
+    finally:
+        db.close()
 
 
 @app.get("/api/v1/map-state")
